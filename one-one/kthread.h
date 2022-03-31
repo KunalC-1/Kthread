@@ -22,6 +22,7 @@ typedef struct kthread_t
     void *stack;
     void *(*f)(void *);
     int kernel_thread_id;
+    void *return_value;
 } kthread_t;
 typedef struct attr
 {
@@ -32,3 +33,4 @@ void init_ll();
 kthread_t *create_kthread();
 struct kthread_node *create_kthread_node();
 void *kthread_create(kthread_t *k, attr *attr, void *(*f)(void *), void *arg);
+int kthread_join(kthread_t thread, void **retval);
