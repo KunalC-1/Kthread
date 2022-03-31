@@ -8,7 +8,8 @@ void *kthread_create(kthread_t *kt, attr *attr, void *(*f)(void *), void *arg)
     void *stack = mmap(NULL, STACK_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     struct kthread_node *k = create_kthread_node();
     // If CLONE_FS is set, the caller and the child process share the same filesystem information.  This includes the root of the filesystem, the current working directory, and the umask.
-    k->thread->kernel_thread_id = clone(....., f, (void *)(stack + STACK_SIZE), CLONE_FS | CLONE_FILES | CLONE_VM);
+    // If CLONE_VM is set, the calling process and the child process run in the same memory space.
+    k->thread->kernel_thread_id = clone(clone_adjuster, f, (void *)(stack + STACK_SIZE), CLONE_FS | CLONE_FILES | CLONE_VM);
     append_ll(k);
 }
 // wrapper function to satisfy clone's argument types
@@ -16,7 +17,7 @@ int clone_adjuster(void *thread)
 {
     kthread_t *t = (kthread_t *)thread;
     t->return_value = t->f();
-    return 0;
+    return t->return_value;
 }
 void append_ll(struct kthread_node *k)
 {
@@ -66,5 +67,6 @@ int kthread_join(kthread_t thread, void **retval)
     if (p == NULL)
         return -1;
     int status;
+    *retval = p->thread->return_value;
     waitpid(p->thread->kernel_thread_id, &status, 0);
 }
