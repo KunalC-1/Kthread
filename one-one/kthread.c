@@ -1,4 +1,7 @@
 #include "kthread.h"
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #define STACK_SIZE 4096
 
@@ -63,21 +66,23 @@ void *kthread_create(kthread_t *kt, attr *attr, void *(*f)(void *), void *args)
     k->stack = stack;
     // If CLONE_FS is set, the caller and the child process share the same filesystem information.  This includes the root of the filesystem, the current working directory, and the umask.
     // If CLONE_VM is set, the calling process and the child process run in the same memory space.
-    k->kernel_thread_id = clone(clone_adjuster, (void *)(stack + STACK_SIZE), CLONE_FS | CLONE_FILES | CLONE_VM, k);
+    k->kernel_thread_id = clone(clone_adjuster, (void *)(stack + STACK_SIZE), SIGCHLD | CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SIGHAND, k);
     append_ll(k);
     *kt = k->tid;
 }
 // wrapper function to satisfy clone's argument types
-
+FILE *f;
 void init_ll()
 {
     kthread_list.head = NULL;
+    f = fopen("log.txt", "a+");
 }
 
 int kthread_join(kthread_t thread, void **retval)
 {
     // find the thread using tid in LL
-    printf("In kthread_join\n");
+    int r, status;
+    fprintf(f, "In kthread_join %llu\n", thread);
     kthread_node *p = kthread_list.head;
     while (p != NULL)
     {
@@ -85,14 +90,22 @@ int kthread_join(kthread_t thread, void **retval)
         {
             break;
         }
+        p = p->next;
     }
     if (p == NULL)
+    {
+        fprintf(f, "Invalid thread id\n");
         return -1;
-    // printf("Tid : %d , %d", p->tid, p->kernel_thread_id);
-    int status;
-    waitpid(p->kernel_thread_id, &status, 0);
+    }
+    r = waitpid(p->kernel_thread_id, &status, 0);
+    if (r == -1)
+    {
+        perror("Error:");
+        return -1;
+    }
+    fprintf(f, "Wait Return : %d\n", r);
+
     *retval = p->return_value;
-    // printf("Return Val : %d", *((int *)*retval));
     delete_ll(p);
 }
 
@@ -105,15 +118,16 @@ int kthread_kill(kthread_t tid, int sig)
         {
             break;
         }
+        p = p->next;
     }
     if (p == NULL)
     {
-        perror("Invalid thread id\n");
+        fprintf(f, "Invalid thread id\n");
         return -1;
     }
-    if (kill(tid, sig) < 0)
+    if (kill(p->kernel_thread_id, sig) < 0)
     {
-        perror("Error in kthread_kill\n");
+        perror("Error in kthread_kill");
         return -1;
     }
     delete_ll(p);

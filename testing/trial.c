@@ -32,5 +32,5 @@ int main()
     yourturn();
     kthread_join(new_thread, (void **)&result);
 
-    printf("%d", *result);
+    printf("Final Ans: %d", *result);
 }
