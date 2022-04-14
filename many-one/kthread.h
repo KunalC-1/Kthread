@@ -8,25 +8,38 @@
 #include <linux/sched.h>
 #include <sys/syscall.h>
 #include "../spinlock.h"
-
+#include <setjmp.h>
 typedef unsigned long long int kthread_t;
+
+typedef enum threadStatus
+{
+    READY,
+    RUNNING,
+    FINISHED,
+    BLOCKED_JOIN,
+    BLOCKED_SEMAPHORE,
+    CANCELLED
+} status_t;
 
 typedef struct kthread_node
 {
     kthread_t tid;
-    void *stack;
     void *args;
     void *(*f)(void *);
     int kernel_thread_id;
     void *return_value;
     struct kthread_node *next;
     struct kthread_node *prev;
+    jmp_buf env;
 } kthread_node;
 struct kthread_list
 {
     spinlock_t lock;
     struct kthread_node *head;
-} kthread_list={.lock.locked=0,.head=NULL};
+    struct kthread_node *current;
+    struct kthread_node *master;
+
+} kthread_list = {.lock.locked = 0, .head = NULL, .current = NULL, .master = NULL};
 typedef struct attr
 {
     int novalue;
