@@ -16,7 +16,7 @@
 #include <string.h>
 typedef unsigned long long int kthread_t;
 #define INTERVAL 50
-#define stack_size 40960
+#define STACK_SIZE 40960
 #define JB_SP 6
 #define JB_PC 7
 
