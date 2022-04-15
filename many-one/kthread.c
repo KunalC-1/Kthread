@@ -1,54 +1,64 @@
-#include "kthread.h"
+#include "./kthread.h"
 
+int next_tid = 0;
+
+/*Timer starting*/
 struct itimerval timer;
 struct sigaction sa;
-void scheduler()
-{
-    if (setjmp(SCHEDULER) == 0)
-        longjmp(MAIN, 1);
-    kthread_list.current = kthread_list.current->next;
-    longjmp(kthread_list.current->env, 1);
-}
-void thread_yield()
-{
-    if (setjmp(kthread_list.current->env) == 0)
-        longjmp(SCHEDULER, 1);
-}
-void *kthread_create(kthread_t *kt, attr *attr, void *(*f)(void *), void *args)
-{
-    kthread_node *k = allocate_kthread_node();
-    k->f = f;
-    k->args = args;
-    // If CLONE_FS is set, the caller and the child process share the same filesystem information.  This includes the root of the filesystem, the current working directory, and the umask.
-    // If CLONE_VM is set, the calling process and the child process run in the same memory space.
-    acquire_lock(&kthread_list.lock);
-    append_ll(k);
-    release_lock(&kthread_list.lock);
 
-    *kt = k->tid;
-}
-void myThread_init()
+void append_ll(kthread_node *k)
 {
-    static int cur_tID = 0;
-    kthread_list.current = (kthread_node *)malloc(sizeof(kthread_node));
-    // setting the main thread
-    kthread_list.master = (kthread_node *)malloc(sizeof(kthread_node));
-    kthread_list.master->tid = 0;
-    kthread_list.master->status = RUNNING;
-    kthread_list.master->f = NULL;
-    kthread_list.master->args = NULL;
-    kthread_list.master->stackPointer = NULL;
-    kthread_list.master->blocked_join_on_tid = -1;
-    kthread_list.current = kthread_list.master;
-    // push_array(thread_list, kthread_list.master);
+    if (kthread_list.tail == NULL)
+    {
+        kthread_list.head = kthread_list.tail = k;
+    }
+    else
+    {
+        kthread_list.tail->next = k;
+        k->prev = kthread_list.tail;
+        kthread_list.tail = k;
+    }
+}
+void delete_ll(kthread_node *del)
+{
+    kthread_node *p = kthread_list.head;
+    if (p == NULL || del == NULL)
+        return;
+    if (kthread_list.head == del)
+        kthread_list.head = del->next;
+    if (kthread_list.tail == del)
+        kthread_list.tail = del->prev;
+    if (del->next != NULL)
+        del->next->prev = del->prev;
+    if (del->prev != NULL)
+        del->prev->next = del->next;
+    free(del);
+    // Free other memory
+}
 
-    memset(&sa, 0, sizeof sa);
-    sa.sa_handler = timer_handler;
-    sa.sa_flags = SA_NODEFER;
-    sigaction(SIGALRM, &sa, 0);
+kthread_node *dequeue_ll()
+{
+    if (!kthread_list.head)
+        return NULL;
+    kthread_node *p = kthread_list.head;
+    kthread_list.head = p->next;
+    if (kthread_list.tail == p)
+        kthread_list.tail = p->prev;
+    return p;
+}
 
-    timer.it_value.tv_sec = INTERVAL / 1000;
-    timer.it_value.tv_usec = (INTERVAL * 1000) % 1000000;
-    timer.it_interval = timer.it_value;
-    start_time();
+kthread_node *search_thread(kthread_t tid)
+{
+    if (!kthread_list.head)
+        return NULL;
+    kthread_node *p = kthread_list.head;
+    while (p)
+    {
+        if (p->tid == tid)
+        {
+            return p;
+        }
+        p = p->next;
+    }
+    return NULL;
 }
