@@ -1,4 +1,4 @@
-#include "kthread.h"
+#include "./kthread.h"
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -59,7 +59,7 @@ kthread_node *allocate_kthread_node()
     k->return_value = NULL;
     return k;
 }
-void *kthread_create(kthread_t *kt, attr *attr, void *(*f)(void *), void *args)
+int kthread_create(kthread_t *kt, attr *attr, void *(*f)(void *), void *args)
 {
     //  use mmap as memory allocation function passing -1 as file descriptor..
     // MAP_ANONYMOUS + MAP_PRIVATE: ->purpose of using this kind of mapping is to allocate a new zeroized memory

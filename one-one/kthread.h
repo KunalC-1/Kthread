@@ -26,7 +26,7 @@ struct kthread_list
 {
     spinlock_t lock;
     struct kthread_node *head;
-} kthread_list={.lock.locked=0,.head=NULL};
+} kthread_list = {.lock.locked = 0, .head = NULL};
 typedef struct attr
 {
     int novalue;
@@ -35,6 +35,7 @@ typedef struct attr
 void init_ll();
 kthread_t *allocate_kthread();
 struct kthread_node *allocate_kthread_node();
-void *kthread_create(kthread_t *k, attr *attr, void *(*f)(void *), void *args);
+int kthread_create(kthread_t *k, attr *attr, void *(*f)(void *), void *args);
 int kthread_join(kthread_t thread, void **retval);
 int kthread_kill(kthread_t thread, int sig);
+void kthread_exit();
