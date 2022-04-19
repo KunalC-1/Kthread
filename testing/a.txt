@@ -1,0 +1,453 @@
+in create
+Timer Stopped
+In init
+Timer Started
+Timer Started
+in create
+Timer Stopped
+Timer Started
+in create
+Timer Stopped
+Timer Started
+In scheduler
+Timer Stopped
+Process -> Ready : 0
+Timer Started
+Process -> Longjump : 0
+Process -> Running : 0
+your turn 0
+In scheduler
+Timer Stopped
+Process -> Ready : 0
+Timer Started
+Process -> Longjump : 1
+In wrapper
+Timer Started
+In scheduler
+Timer Stopped
+Timer Started
+Process -> Longjump : 2
+In wrapper
+Timer Started
+In scheduler
+Timer Stopped
+Timer Started
+Process -> Longjump : 3
+In wrapper
+Timer Started
+In scheduler
+Timer Stopped
+Timer Started
+Process -> Longjump : 0
+Process -> Running : 0
+your turn 1
+In scheduler
+Timer Stopped
+Process -> Ready : 0
+Timer Started
+Process -> Longjump : 1
+Process -> Running : 1
+My Turn! 0
+In scheduler
+Timer Stopped
+Process -> Ready : 1
+Timer Started
+Process -> Longjump : 2
+Process -> Running : 2
+his turn 0
+In scheduler
+Timer Stopped
+Process -> Ready : 2
+Timer Started
+Process -> Longjump : 3
+Process -> Running : 3
+her turn 0
+In scheduler
+Timer Stopped
+Process -> Ready : 3
+Timer Started
+Process -> Longjump : 0
+Process -> Running : 0
+your turn 2
+In scheduler
+Timer Stopped
+Process -> Ready : 0
+Timer Started
+Process -> Longjump : 1
+Process -> Running : 1
+My Turn! 1
+In scheduler
+Timer Stopped
+Process -> Ready : 1
+Timer Started
+Process -> Longjump : 2
+Process -> Running : 2
+his turn 1
+In scheduler
+Timer Stopped
+Process -> Ready : 2
+Timer Started
+Process -> Longjump : 3
+Process -> Running : 3
+her turn 1
+In scheduler
+Timer Stopped
+Process -> Ready : 3
+Timer Started
+Process -> Longjump : 0
+Process -> Running : 0
+your turn 3
+In scheduler
+Timer Stopped
+Process -> Ready : 0
+Timer Started
+Process -> Longjump : 1
+Process -> Running : 1
+My Turn! 2
+In scheduler
+Timer Stopped
+Process -> Ready : 1
+Timer Started
+Process -> Longjump : 2
+Process -> Running : 2
+his turn 2
+In scheduler
+Timer Stopped
+Process -> Ready : 2
+Timer Started
+Process -> Longjump : 3
+Process -> Running : 3
+her turn 2
+In scheduler
+Timer Stopped
+Process -> Ready : 3
+Timer Started
+Process -> Longjump : 0
+Process -> Running : 0
+your turn 4
+In scheduler
+Timer Stopped
+Process -> Ready : 0
+Timer Started
+Process -> Longjump : 1
+Process -> Running : 1
+My Turn! 3
+In scheduler
+Timer Stopped
+Process -> Ready : 1
+Timer Started
+Process -> Longjump : 2
+Process -> Running : 2
+his turn 3
+In scheduler
+Timer Stopped
+Process -> Ready : 2
+Timer Started
+Process -> Longjump : 3
+Process -> Running : 3
+her turn 3
+In scheduler
+Timer Stopped
+Process -> Ready : 3
+Timer Started
+Process -> Longjump : 0
+Process -> Running : 0
+your turn 5
+In scheduler
+Timer Stopped
+Process -> Ready : 0
+Timer Started
+Process -> Longjump : 1
+Process -> Running : 1
+My Turn! 4
+In scheduler
+Timer Stopped
+Process -> Ready : 1
+Timer Started
+Process -> Longjump : 2
+Process -> Running : 2
+his turn 4
+In scheduler
+Timer Stopped
+Process -> Ready : 2
+Timer Started
+Process -> Longjump : 3
+Process -> Running : 3
+her turn 4
+In scheduler
+Timer Stopped
+Process -> Ready : 3
+Timer Started
+Process -> Longjump : 0
+Process -> Running : 0
+your turn 6
+In scheduler
+Timer Stopped
+Process -> Ready : 0
+Timer Started
+Process -> Longjump : 1
+Process -> Running : 1
+My Turn! 5
+In scheduler
+Timer Stopped
+Process -> Ready : 1
+Timer Started
+Process -> Longjump : 2
+Process -> Running : 2
+his turn 5
+In scheduler
+Timer Stopped
+Process -> Ready : 2
+Timer Started
+Process -> Longjump : 3
+Process -> Running : 3
+her turn 5
+In scheduler
+Timer Stopped
+Process -> Ready : 3
+Timer Started
+Process -> Longjump : 0
+Process -> Running : 0
+your turn 7
+In scheduler
+Timer Stopped
+Process -> Ready : 0
+Timer Started
+Process -> Longjump : 1
+Process -> Running : 1
+My Turn! 6
+In scheduler
+Timer Stopped
+Process -> Ready : 1
+Timer Started
+Process -> Longjump : 2
+Process -> Running : 2
+his turn 6
+In scheduler
+Timer Stopped
+Process -> Ready : 2
+Timer Started
+Process -> Longjump : 3
+Process -> Running : 3
+her turn 6
+In scheduler
+Timer Stopped
+Process -> Ready : 3
+Timer Started
+Process -> Longjump : 0
+Process -> Running : 0
+your turn 8
+In scheduler
+Timer Stopped
+Process -> Ready : 0
+Timer Started
+Process -> Longjump : 1
+Process -> Running : 1
+My Turn! 7
+In scheduler
+Timer Stopped
+Process -> Ready : 1
+Timer Started
+Process -> Longjump : 2
+Process -> Running : 2
+his turn 7
+In scheduler
+Timer Stopped
+Process -> Ready : 2
+Timer Started
+Process -> Longjump : 3
+Process -> Running : 3
+her turn 7
+In scheduler
+Timer Stopped
+Process -> Ready : 3
+Timer Started
+Process -> Longjump : 0
+Process -> Running : 0
+your turn 9
+In scheduler
+Timer Stopped
+Process -> Ready : 0
+Timer Started
+Process -> Longjump : 1
+Process -> Running : 1
+My Turn! 8
+In scheduler
+Timer Stopped
+Process -> Ready : 1
+Timer Started
+Process -> Longjump : 2
+Process -> Running : 2
+his turn 8
+In scheduler
+Timer Stopped
+Process -> Ready : 2
+Timer Started
+Process -> Longjump : 3
+Process -> Running : 3
+her turn 8
+In scheduler
+Timer Stopped
+Process -> Ready : 3
+Timer Started
+Process -> Longjump : 0
+Process -> Running : 0
+your turn 10
+In scheduler
+Timer Stopped
+Process -> Ready : 0
+Timer Started
+Process -> Longjump : 1
+Process -> Running : 1
+My Turn! 9
+In scheduler
+Timer Stopped
+Process -> Ready : 1
+Timer Started
+Process -> Longjump : 2
+Process -> Running : 2
+his turn 9
+In scheduler
+Timer Stopped
+Process -> Ready : 2
+Timer Started
+Process -> Longjump : 3
+Process -> Running : 3
+her turn 9
+In scheduler
+Timer Stopped
+Process -> Ready : 3
+Timer Started
+Process -> Longjump : 0
+Process -> Running : 0
+your turn 11
+In scheduler
+Timer Stopped
+Process -> Ready : 0
+Timer Started
+Process -> Longjump : 1
+Process -> Running : 1
+My Turn! 10
+In scheduler
+Timer Stopped
+Process -> Ready : 1
+Timer Started
+Process -> Longjump : 2
+Process -> Running : 2
+his turn 10
+In scheduler
+Timer Stopped
+Process -> Ready : 2
+Timer Started
+Process -> Longjump : 3
+Process -> Running : 3
+her turn 10
+In scheduler
+Timer Stopped
+Process -> Ready : 3
+Timer Started
+Process -> Longjump : 0
+Process -> Running : 0
+your turn 12
+in join
+Timer Stopped
+Timer Started
+in join,status=BLOCKED_JOIN for 1
+In scheduler
+Timer Stopped
+Timer Started
+Process -> Longjump : 1
+Process -> Running : 1
+My Turn! 11
+In scheduler
+Timer Stopped
+Process -> Ready : 1
+Timer Started
+Process -> Longjump : 2
+Process -> Running : 2
+his turn 11
+In scheduler
+Timer Stopped
+Process -> Ready : 2
+Timer Started
+Process -> Longjump : 3
+Process -> Running : 3
+her turn 11
+In scheduler
+Timer Stopped
+Process -> Ready : 3
+Timer Started
+Process -> Longjump : 1
+Process -> Running : 1
+My Turn! 12
+In scheduler
+Timer Stopped
+Process -> Ready : 1
+Timer Started
+Process -> Longjump : 2
+Process -> Running : 2
+his turn 12
+in kthread exit
+Timer Stopped
+Timer Started
+In scheduler
+Timer Stopped
+Timer Started
+Process -> Longjump : 3
+Process -> Running : 3
+her turn 12
+in kthread exit
+Timer Stopped
+Timer Started
+In scheduler
+Timer Stopped
+Timer Started
+Process -> Longjump : 1
+Process -> Running : 1
+My Turn! 13
+In scheduler
+Timer Stopped
+Process -> Ready : 1
+Timer Started
+Process -> Longjump : 1
+Process -> Running : 1
+My Turn! 14
+In scheduler
+Timer Stopped
+Process -> Ready : 1
+Timer Started
+Process -> Longjump : 1
+Process -> Running : 1
+My Turn! 15
+In scheduler
+Timer Stopped
+Process -> Ready : 1
+Timer Started
+Process -> Longjump : 1
+Process -> Running : 1
+My Turn! 16
+In scheduler
+Timer Stopped
+Process -> Ready : 1
+Timer Started
+Process -> Longjump : 1
+Process -> Running : 1
+My Turn! 17
+Ans :5in kthread exit
+Timer Stopped
+block_tid 0
+Timer Started
+In scheduler
+Timer Stopped
+Timer Started
+Process -> Longjump : 0
+Process -> Running : 0
+in join
+Timer Stopped
+Timer Started
+in join,status=FINISHED for 2
+in join
+Timer Stopped
+Timer Started
+in join,status=FINISHED for 3
+Final Ans: 5

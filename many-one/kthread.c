@@ -1,6 +1,6 @@
 #include "./kthread.h"
 
-static kthread_t next_tid = 1;
+static kthread_t next_tid = 0;
 
 struct itimerval timer;
 struct sigaction sa;
@@ -106,12 +106,15 @@ static long int manglex64(long int p)
 
 void scheduler()
 {
+    printf("In scheduler\n");
     end_timer();
+    // initially master process is marked running in init, which is made to ready state here
     if (kthread_list.current->status == RUNNING)
     {
         kthread_list.current->status = READY;
         printf("Process -> Ready : %llu\n", kthread_list.current->tid);
     }
+    // initially setjmp returns 0 and we run the else part
     if (setjmp(kthread_list.current->env))
     {
         kthread_list.current->status = RUNNING;
@@ -144,12 +147,12 @@ void delete_all_threads()
         p = p->next;
     }
     kthread_list.head = kthread_list.tail = NULL;
-    next_tid = 1;
+    next_tid = 0;
 }
 
 void kthread_init()
 {
-    next_tid = 1;
+    printf("In init\n");
     kthread_list.head = kthread_list.tail = NULL;
     kthread_list.current = (kthread_node *)malloc(sizeof(kthread_node));
 
@@ -162,7 +165,6 @@ void kthread_init()
     kthread_list.master->stack_top = NULL;
     kthread_list.master->block_join_tid = -1;
     kthread_list.current = kthread_list.master;
-    // push_array(thread_list, kthread_list.master);
     append_ll(kthread_list.master);
 
     memset(&sa, 0, sizeof sa);
@@ -174,25 +176,26 @@ void kthread_init()
 
 void wrapper()
 {
+    printf("In wrapper\n");
     begin_timer();
     void *r = kthread_list.current->f(kthread_list.current->args);
     kthread_list.current->return_value = r;
-    // put exit thread here
     kthread_exit();
 }
 
 int kthread_create(kthread_t *thread, attr *attr, void *(*f)(void *), void *arg)
 {
+    printf("in create\n");
     if (!thread || !f)
         return EINVAL;
     end_timer();
-    if (next_tid == 1)
+    if (next_tid == 0)
     {
         kthread_init();
     }
     kthread_node *new_thread;
     new_thread = (kthread_node *)malloc(sizeof(kthread_node));
-    new_thread->tid = next_tid++; // tID starts from 1
+    new_thread->tid = ++next_tid; // tID starts from 1
     *thread = next_tid;
     new_thread->status = READY;
     new_thread->f = f;
@@ -200,7 +203,6 @@ int kthread_create(kthread_t *thread, attr *attr, void *(*f)(void *), void *arg)
     new_thread->block_join_tid = -1;
     new_thread->stack_size = STACK_SIZE;
     new_thread->stack_top = (unsigned long *)malloc(STACK_SIZE);
-    // push_array(thread_list, new_thread);
     append_ll(new_thread);
     if (setjmp(new_thread->env) == 0)
     {
@@ -224,6 +226,7 @@ void kthread_yield()
 
 int kthread_join(kthread_t thread, void **retval)
 {
+    printf("in join\n");
     end_timer();
 
     if (thread == kthread_list.current->tid)
@@ -238,21 +241,24 @@ int kthread_join(kthread_t thread, void **retval)
         printf("Tried to join non-existing thread");
         exit(0);
     }
-
+    // kthreadlist.current will be main[function calling the kthread_join]  program's tid[i.e 0]
     join_thread->block_join_tid = kthread_list.current->tid;
 
     if (join_thread->status == FINISHED)
     {
         // the thread is no longer active, so simply return
         begin_timer();
+        printf("in join,status=FINISHED for tid: %lld\n", join_thread->tid);
         if (retval)
             *retval = join_thread->return_value;
         return 0;
     }
     else
     {
+        // changing status of main thread as blocked, waiting for the child thread to complete
         kthread_list.current->status = BLOCKED_JOIN;
         begin_timer();
+        printf("in join,status=BLOCKED_JOIN for tid: %lld\n", join_thread->tid);
         // pause so that scheduling can be done
         scheduler();
     }
@@ -263,12 +269,14 @@ int kthread_join(kthread_t thread, void **retval)
 
 void kthread_exit()
 {
+    printf("in kthread exit\n");
     end_timer();
 
     kthread_list.current->status = FINISHED;
     int block_tid = kthread_list.current->block_join_tid;
     if (block_tid != -1)
     {
+        printf("block_tid %d\n", block_tid);
         kthread_node *block_thread = search_thread(block_tid);
         if (block_thread)
             block_thread->status = READY;
