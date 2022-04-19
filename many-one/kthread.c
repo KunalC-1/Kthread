@@ -1,6 +1,6 @@
 #include "./kthread.h"
 
-int next_tid = 0;
+static kthread_t next_tid = 1;
 
 struct itimerval timer;
 struct sigaction sa;
@@ -144,12 +144,12 @@ void delete_all_threads()
         p = p->next;
     }
     kthread_list.head = kthread_list.tail = NULL;
-    next_tid = 0;
+    next_tid = 1;
 }
 
 void kthread_init()
 {
-    next_tid = 0;
+    next_tid = 1;
     kthread_list.head = kthread_list.tail = NULL;
     kthread_list.current = (kthread_node *)malloc(sizeof(kthread_node));
 
@@ -181,19 +181,21 @@ void wrapper()
     kthread_exit();
 }
 
-int kthread_create(kthread_t *thread, attr *attr, void *(*function)(void *), void *arg)
+int kthread_create(kthread_t *thread, attr *attr, void *(*f)(void *), void *arg)
 {
+    if (!thread || !f)
+        return EINVAL;
     end_timer();
-    if (next_tid == 0)
+    if (next_tid == 1)
     {
         kthread_init();
     }
     kthread_node *new_thread;
     new_thread = (kthread_node *)malloc(sizeof(kthread_node));
-    new_thread->tid = ++next_tid; // tID starts from 1
+    new_thread->tid = next_tid++; // tID starts from 1
     *thread = next_tid;
     new_thread->status = READY;
-    new_thread->f = function;
+    new_thread->f = f;
     new_thread->args = arg;
     new_thread->block_join_tid = -1;
     new_thread->stack_size = STACK_SIZE;

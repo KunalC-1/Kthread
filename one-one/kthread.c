@@ -38,7 +38,10 @@ void delete_ll(kthread_node *del)
 int clone_adjuster(void *node)
 {
     kthread_node *t = (kthread_node *)node;
-    t->return_value = t->f(t->args);
+    void *r = t->f(t->args);
+    // acquire_lock(&kthread_list.lock);
+    t->return_value = r;
+    // release_lock(&kthread_list.lock);
     return 0;
 }
 kthread_node *allocate_kthread_node()
@@ -62,9 +65,11 @@ int kthread_create(kthread_t *kt, attr *attr, void *(*f)(void *), void *args)
 {
     //  use mmap as memory allocation function passing -1 as file descriptor..
     // MAP_ANONYMOUS + MAP_PRIVATE: ->purpose of using this kind of mapping is to allocate a new zeroized memory
+    if (!kt || !f)
+        return EINVAL;
+    init_lock(&kthread_list.lock);
     if (next_tid == 1)
         kthread_list.head = NULL;
-    init_lock(&kthread_list.lock);
     void *stack = mmap(NULL, STACK_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     kthread_node *k = allocate_kthread_node();
     k->f = f;
@@ -76,8 +81,8 @@ int kthread_create(kthread_t *kt, attr *attr, void *(*f)(void *), void *args)
     acquire_lock(&kthread_list.lock);
     append_ll(k);
     release_lock(&kthread_list.lock);
-
     *kt = k->tid;
+    return 0;
 }
 // wrapper function to satisfy clone's argument types
 
@@ -90,6 +95,7 @@ int kthread_join(kthread_t thread, void **retval)
     kthread_node *p = kthread_list.head;
     while (p != NULL)
     {
+        // printf("Tid : %llu\n", p->tid);
         if (p->tid == thread)
         {
             break;
@@ -118,8 +124,10 @@ int kthread_join(kthread_t thread, void **retval)
     return 0;
 }
 
-int kthread_kill(kthread_t tid, int sig)
+int kthread_kill(kthread_t tid, int signal_num)
 {
+    if (signal_num < 0 || signal_num > 64)
+        return EINVAL;
     acquire_lock(&kthread_list.lock);
     kthread_node *p = kthread_list.head;
     while (p != NULL)
@@ -133,12 +141,16 @@ int kthread_kill(kthread_t tid, int sig)
     if (p == NULL)
     {
         fprintf(f, "Invalid thread id\n");
+        release_lock(&kthread_list.lock);
         return -1;
     }
-    if (kill(p->kernel_thread_id, sig) < 0)
+    pid_t thread_grp_id = getpid();
+    int r = tgkill(thread_grp_id, p->kernel_thread_id, signal_num);
+    if (r == -1)
     {
-        perror("Error in kthread_kill");
-        return -1;
+        perror("thread kill");
+        release_lock(&kthread_list.lock);
+        return r;
     }
     delete_ll(p);
     release_lock(&kthread_list.lock);
@@ -154,4 +166,24 @@ void delete_all_threads()
     }
     kthread_list.head = kthread_list.tail = NULL;
     next_tid = 1;
+}
+void kthread_exit(void *return_value)
+{
+    if (return_value == NULL)
+        return;
+    pid_t cur_tid = gettid();
+    kthread_node *p = kthread_list.head;
+    while (p)
+    {
+        if (p->kernel_thread_id == cur_tid)
+            break;
+        p = p->next;
+    }
+    if (p)
+    {
+        p->return_value = return_value;
+        kill(cur_tid, SIGKILL);
+        delete_ll(p);
+    }
+    return;
 }
