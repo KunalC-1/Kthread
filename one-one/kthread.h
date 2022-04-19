@@ -7,7 +7,7 @@
 #include <sched.h>
 #include <linux/sched.h>
 #include <sys/syscall.h>
-#include "../spinlock.h"
+#include "spinlock.h"
 
 typedef unsigned long long int kthread_t;
 
@@ -25,8 +25,9 @@ typedef struct kthread_node
 struct kthread_list
 {
     spinlock_t lock;
-    struct kthread_node *head;
-} kthread_list = {.lock.locked = 0, .head = NULL};
+    kthread_node *head;
+    kthread_node *tail;
+} kthread_list;
 typedef struct attr
 {
     int novalue;

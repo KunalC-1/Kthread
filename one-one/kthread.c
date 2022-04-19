@@ -4,22 +4,19 @@
 #include <fcntl.h>
 
 #define STACK_SIZE 4096
-
+FILE *f;
+static kthread_t next_tid = 1;
 void append_ll(kthread_node *k)
 {
-    if (kthread_list.head == NULL)
+    if (kthread_list.tail == NULL)
     {
-        kthread_list.head = k;
+        kthread_list.head = kthread_list.tail = k;
     }
     else
     {
-        kthread_node *p = kthread_list.head;
-        while (p->next)
-        {
-            p = p->next;
-        }
-        p->next = k;
-        k->prev = p;
+        kthread_list.tail->next = k;
+        k->prev = kthread_list.tail;
+        kthread_list.tail = k;
     }
 }
 void delete_ll(kthread_node *del)
@@ -27,14 +24,16 @@ void delete_ll(kthread_node *del)
     kthread_node *p = kthread_list.head;
     if (p == NULL || del == NULL)
         return;
-    if (p == del)
-        p = del->next;
+    if (kthread_list.head == del)
+        kthread_list.head = del->next;
+    if (kthread_list.tail == del)
+        kthread_list.tail = del->prev;
     if (del->next != NULL)
         del->next->prev = del->prev;
     if (del->prev != NULL)
         del->prev->next = del->next;
-    free(del);
     // Free other memory
+    free(del);
 }
 int clone_adjuster(void *node)
 {
@@ -46,12 +45,12 @@ kthread_node *allocate_kthread_node()
 {
     kthread_node *k = (kthread_node *)malloc(sizeof(kthread_node));
     acquire_lock(&kthread_list.lock);
-    static kthread_t next_tid = 1;
     if (next_tid == 1)
     {
         f = fopen("log.txt", "a+");
     }
     k->tid = next_tid++;
+    fprintf(f, "append %lld\n", k->tid);
     release_lock(&kthread_list.lock);
     k->stack = NULL;
     k->next = NULL;
@@ -63,6 +62,9 @@ int kthread_create(kthread_t *kt, attr *attr, void *(*f)(void *), void *args)
 {
     //  use mmap as memory allocation function passing -1 as file descriptor..
     // MAP_ANONYMOUS + MAP_PRIVATE: ->purpose of using this kind of mapping is to allocate a new zeroized memory
+    if (next_tid == 1)
+        kthread_list.head = NULL;
+    init_lock(&kthread_list.lock);
     void *stack = mmap(NULL, STACK_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     kthread_node *k = allocate_kthread_node();
     k->f = f;
@@ -78,7 +80,6 @@ int kthread_create(kthread_t *kt, attr *attr, void *(*f)(void *), void *args)
     *kt = k->tid;
 }
 // wrapper function to satisfy clone's argument types
-FILE *f;
 
 int kthread_join(kthread_t thread, void **retval)
 {
@@ -109,7 +110,8 @@ int kthread_join(kthread_t thread, void **retval)
         return -1;
     }
     fprintf(f, "Wait Return : %d\n", r);
-    *retval = p->return_value;
+    if (retval)
+        *retval = p->return_value;
     acquire_lock(&kthread_list.lock);
     delete_ll(p);
     release_lock(&kthread_list.lock);
@@ -141,4 +143,15 @@ int kthread_kill(kthread_t tid, int sig)
     delete_ll(p);
     release_lock(&kthread_list.lock);
     return 0;
+}
+void delete_all_threads()
+{
+    kthread_node *p = kthread_list.head;
+    while (p != NULL)
+    {
+        delete_ll(p);
+        p = p->next;
+    }
+    kthread_list.head = kthread_list.tail = NULL;
+    next_tid = 1;
 }
