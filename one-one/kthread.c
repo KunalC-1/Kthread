@@ -90,7 +90,7 @@ int kthread_join(kthread_t thread, void **retval)
 {
     // find the thread using tid in LL
     int r, status;
-    fprintf(f, "In kthread_join %llu\n", thread);
+    // fprintf(f, "In kthread_join %llu\n", thread);
     acquire_lock(&kthread_list.lock);
     kthread_node *p = kthread_list.head;
     while (p != NULL)
@@ -104,7 +104,7 @@ int kthread_join(kthread_t thread, void **retval)
     }
     if (p == NULL)
     {
-        fprintf(f, "Invalid thread id\n");
+        // fprintf(f, "Invalid thread id\n");
         release_lock(&kthread_list.lock);
         return -1;
     }
@@ -115,7 +115,7 @@ int kthread_join(kthread_t thread, void **retval)
         perror("Error:");
         return -1;
     }
-    fprintf(f, "Wait Return : %d\n", r);
+    // fprintf(f, "Wait Return : %d\n", r);
     if (retval)
         *retval = p->return_value;
     acquire_lock(&kthread_list.lock);
