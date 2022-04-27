@@ -115,10 +115,17 @@ int kthread_join(kthread_t thread, void **retval)
         perror("Error:");
         return -1;
     }
-    // fprintf(f, "Wait Return : %d\n", r);
-    if (retval)
-        *retval = p->return_value;
     acquire_lock(&kthread_list.lock);
+    if (retval)
+    {
+        if (p->return_value)
+        {
+            fprintf(f, "Return : %d, tid : %lld\n", *(int *)(p->return_value), p->tid);
+            *retval = p->return_value;
+        }
+        else
+            *retval = NULL;
+    }
     delete_ll(p);
     release_lock(&kthread_list.lock);
     return 0;

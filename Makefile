@@ -1,5 +1,5 @@
 CC = cc
-CFLAGS = -g -w -Wall
+CFLAGS = -Wall
 
 test: test.o kthread.o spinlock.o
 	$(CC) $(CFLAGS) -o test test.o kthread.o spinlock.o
