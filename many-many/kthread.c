@@ -238,6 +238,39 @@ int thread_runner(void *args)
     return 0;
 }
 
+void scheduler()
+{
+    // fprintf(f, "in hadle alarm for tid : %d\n", getpid());
+    printf("in hadle alarm for tid : %d\n", getpid());
+    if (!ready.head)
+    {
+        return;
+    }
+    kernel_thread *kt = search_kernel_thread(getpid());
+    if (kt->current == NULL)
+    {
+        kt->current = dequeue_ll(&ready);
+        kt->current->k_tid = getpid();
+        // fprintf(f, "Long Jmp to local thread from timer : %lld , pid : %d, mypid : %d\n", kt->current->tid, getpid(), kt->current->k_tid);
+        printf("Long Jmp to local thread from timer : %lld , pid : %d, mypid : %d\n", kt->current->tid, getpid(), kt->current->k_tid);
+        longjmp(kt->current->env, 1);
+    }
+    /* Storing the current context */
+    if (setjmp(kt->current->env))
+    {
+        return;
+    }
+    else
+    {
+        kt->current->k_tid = 0;
+        enqueue_ll(&ready, kt->current);
+        kt->current = dequeue_ll(&ready);
+        kt->current->k_tid = getpid();
+        // fprintf(f, "Long Jmp to local thread from timer : %lld , pid : %d, mypid : %d\n", kt->current->tid, getpid(), kt->current->k_tid);
+        printf("Long Jmp to local thread from timer : %lld , pid : %d, mypid : %d\n", kt->current->tid, getpid(), kt->current->k_tid);
+        longjmp(kt->current->env, 1);
+    }
+}
 int kthread_create(kthread_t *thread, attr *attr, void *(*fun)(void *), void *arg)
 {
     if (!thread || !fun)
