@@ -15,6 +15,7 @@
 #include <errno.h>
 #include <sys/time.h>
 #include <string.h>
+#include "spinlock.h"
 #define MAX_KERNEL_THREAD 50
 #define KERNEL_THREAD_STACK_SIZE 40960
 #define THREAD_STACK_SIZE 40960
