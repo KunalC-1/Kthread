@@ -79,6 +79,7 @@ void scheduler();
 int kthread_create(kthread_t *thread, attr *attr, void *(*f)(void *), void *arg);
 int kthread_join(kthread_t thread, void **retval);
 void kthread_exit(void *return_value);
+int kthread_kill(kthread_t thread, int sig);
 void raise_signals(kthread_node *t);
 
 #endif

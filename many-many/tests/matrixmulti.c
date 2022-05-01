@@ -1,4 +1,4 @@
-#include "kthread.h"
+#include "../kthread.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -31,6 +31,7 @@ void *mult(void *arg)
 
     // End Of Thread
     kthread_exit(0);
+    return NULL;
 }
 
 int main()
@@ -126,12 +127,11 @@ int main()
             // Create Specific Thread For Each Element In Result Matrix
             status = kthread_create(&thread[thread_number], NULL, mult, (void *)&p[thread_number]);
 
-            // Check For Error
-            // if (status)
-            // {
-            //     printf("Error In Threads");
-            //     exit(0);
-            // }
+            if (status)
+            {
+                printf("Error In Threads");
+                exit(0);
+            }
 
             thread_number++;
         }

@@ -171,8 +171,6 @@ void init_timer()
 
 void kthread_init()
 {
-    // printf("In init\n");
-    // f = fopen("log.txt", "a+");
     init_q();
     init_lock(&listlock);
     for (int i = 0; i < count_kernel_threads; i++)
@@ -191,31 +189,23 @@ void kthread_init()
 }
 void wrapper(int signum)
 {
-    // fprintf(f, "In wrapper\n");
     kernel_thread *kt = search_kernel_thread(gettid());
     if (!kt)
         exit(0);
     kthread_node *cur = kt->current;
     void *(*fun)(void *) = cur->f;
     void *args = cur->args;
-    // printf("thread starting : %lld , pid : %d, mypid : %d, kernel tid : %d\n", kt->current->tid, gettid(), kt->current->k_tid, kt->k_tid);
-    // fprintf(f, "thread starting : %lld , pid : %d, mypid : %d\n", kt->current->tid, gettid(), kt->current->k_tid);
     begin_timer();
     void *r = fun(args);
     end_timer();
     cur->return_value = r;
     kt = search_kernel_thread(gettid());
-    // acquire_lock(&listlock);
     kt->current->status = FINISHED;
-    // release_lock(&listlock);
     kt->current = NULL;
-    // printf("kernel thread in wrapper : %d , pid : %d\n", kt->k_tid, gettid());
-    // printf("Long Jmp kernel thread: %d , pid : %d\n", kt->k_tid, gettid());
     longjmp(kt->env, 1);
 }
 int thread_runner(void *args)
 {
-    // fprintf(f, "Thread Runner started : %d \n", gettid());
     init_timer();
     kernel_thread *kt = NULL;
     kthread_node *next;
@@ -253,12 +243,9 @@ int thread_runner(void *args)
             {
                 release_lock(&listlock);
                 longjmp(kt->current->env, 1);
-                // fprintf(f, "Long Jmp from thread runner to local thread: %lld , pid : %d\n", kt->current->tid, gettid());
             }
             else
                 acquire_lock(&listlock);
-
-            // printf("Returned successfully, %d\n", kt->k_tid);
         }
         release_lock(&listlock);
         if (exit_all)
@@ -271,10 +258,7 @@ int thread_runner(void *args)
 
 void scheduler()
 {
-    // fprintf(f, "in hadle alarm for tid : %d\n", gettid());
-    // printf("in hadle alarm for tid : %d\n", gettid());
     kernel_thread *kt = search_kernel_thread(gettid());
-    /* Storing the current context */
 
     if (setjmp(kt->current->env))
     {
@@ -333,7 +317,6 @@ int kthread_create(kthread_t *thread, attr *attr, void *(*fun)(void *), void *ar
     {
         kthread_init();
     }
-    // fprintf(f, "in thread create\n");
 
     kthread_node *new_thread;
     new_thread = (kthread_node *)malloc(sizeof(kthread_node));
@@ -353,7 +336,6 @@ int kthread_create(kthread_t *thread, attr *attr, void *(*fun)(void *), void *ar
     acquire_lock(&listlock);
     enqueue_ll(new_thread);
     release_lock(&listlock);
-    // printf("Exit from thread_Create\n");
     return 0;
 }
 int is_current_running()
@@ -375,32 +357,16 @@ int kthread_join(kthread_t tid, void **retval)
         return EINVAL;
     while (p->status != FINISHED)
         ;
-    // printf("found terminated thread with id : %lld\n", p->tid);
-    // fprintf(f, "found terminated thread with id : %lld\n", p->tid);
     if (retval)
     {
         if (p->return_value)
         {
-            // fprintf(f, "Return : %d, tid : %lld\n", *(int *)(p->return_value), p->tid);
-            // printf("Return : %d, tid : %lld\n", *(int *)(p->return_value), p->tid);
             *retval = p->return_value;
         }
         else
             *retval = NULL;
     }
     delete_ll(p);
-    // acquire_lock(&listlock);
-    // acquire_lock(&terminatedlock);
-    // if (is_queue_empty(kthread_list) && is_queue_empty(terminated) && !is_current_running())
-    // {
-    //     exit_all = 1;
-    //     for (int i = 0; i < count_kernel_threads; i++)
-    //     {
-    //         waitpid(all_kernel_threads[i].k_tid, NULL, 0);
-    //     }
-    // }
-    // release_lock(&terminatedlock);
-    // release_lock(&listlock);
     return 0;
 }
 
@@ -464,13 +430,11 @@ void raise_signals(kthread_node *t)
             }
             else if (j == SIGSTOP)
             {
-                // printf("stopped\n");
                 t->status = STOPPED;
                 // so scheduler won't schedule this now
             }
             else if (j == SIGCONT)
             {
-                // printf("sig cont\n");
                 t->status = READY;
             }
             else
