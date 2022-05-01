@@ -85,28 +85,35 @@ int kthread_create(kthread_t *kt, attr *attr, void *(*f)(void *), void *args)
     return 0;
 }
 // wrapper function to satisfy clone's argument types
-
+kthread_node *search_thread(kthread_t tid)
+{
+    if (!kthread_list.head)
+        return NULL;
+    kthread_node *p = kthread_list.head;
+    while (p)
+    {
+        if (p->tid == tid)
+        {
+            return p;
+        }
+        p = p->next;
+    }
+    return NULL;
+}
 int kthread_join(kthread_t thread, void **retval)
 {
+    if (gettid() == thread || thread == 0)
+        return EINVAL;
     // find the thread using tid in LL
     int r, status;
     // fprintf(f, "In kthread_join %llu\n", thread);
     acquire_lock(&kthread_list.lock);
-    kthread_node *p = kthread_list.head;
-    while (p != NULL)
-    {
-        // printf("Tid : %llu\n", p->tid);
-        if (p->tid == thread)
-        {
-            break;
-        }
-        p = p->next;
-    }
+    kthread_node *p = search_thread(thread);
     if (p == NULL)
     {
         // fprintf(f, "Invalid thread id\n");
         release_lock(&kthread_list.lock);
-        return -1;
+        return EINVAL;
     }
     release_lock(&kthread_list.lock);
     r = waitpid(p->kernel_thread_id, &status, 0);
@@ -151,15 +158,13 @@ int kthread_kill(kthread_t tid, int signal_num)
         release_lock(&kthread_list.lock);
         return -1;
     }
-    pid_t thread_grp_id = getpid();
-    int r = tgkill(thread_grp_id, p->kernel_thread_id, signal_num);
+    int r = kill(p->kernel_thread_id, signal_num);
     if (r == -1)
     {
         perror("thread kill");
         release_lock(&kthread_list.lock);
         return r;
     }
-    delete_ll(p);
     release_lock(&kthread_list.lock);
     return 0;
 }

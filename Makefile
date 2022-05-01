@@ -5,8 +5,7 @@ test: test.o kthread.o spinlock.o
 	$(CC) $(CFLAGS) -o test test.o kthread.o spinlock.o
 
 testmany: test.o kthread.o 
-	$(CC) $(CFLAGS) -o test test.o kthread.o 
-
+	$(CC) $(CFLAGS) -o testmany test.o kthread.o 
 
 test.o: 
 	$(CC) $(CFLAGS) -c testing/test.c
@@ -18,4 +17,4 @@ spinlock.o : many-one/spinlock.c many-one/spinlock.h
 	$(CC) $(CFLAGS) -c many-one/spinlock.c
 
 clean:
-	rm -f core *.o test
+	rm -f *.o test

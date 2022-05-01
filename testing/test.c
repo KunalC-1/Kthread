@@ -45,6 +45,12 @@ void *thread5()
         ;
     return NULL;
 }
+void *thread6()
+{
+    int r = 899;
+    kthread_exit(&r);
+    return NULL;
+}
 void sigusr1_handler()
 {
     counting = 0;
@@ -190,7 +196,7 @@ void test_mutex(void)
     c2 = 0;
     run = 1;
     c = 0;
-    printf("Starting test with Mutex\n");
+    printf("\n\t\033[1m1. Test with Mutex\033[0m\n\n");
     kthread_mutex_init(&slp_lock, NULL);
     kthread_t t1, t2;
     kthread_create(&t1, NULL, f, (void *)&slp_lock);
@@ -204,13 +210,45 @@ void test_mutex(void)
     printf("\nValues after test are (c1 + c2)=%d c=%d\n", c1 + c2, c);
     TEST_CHECK_(c1 + c2 - c == 0, "Test Passed");
 }
-
+void test_thread_exit()
+{
+    printf("\n\t\033[1m1. Created thread uses kthread_exit \033[0m\n\n");
+    void *ret;
+    kthread_t tid;
+    kthread_create(&tid, NULL, thread6, NULL);
+    kthread_join(tid, &ret);
+    printf("Expected Exit Status is %d\n", 899);
+    printf("Actual   Exit Status is %d\n", *(int *)ret);
+    TEST_CHECK_(*(int *)ret == 899, "kthread exit changes return value");
+}
 TEST_LIST = {
     {"1 : Thread Creation with Invalid Arguments", test_invalid_arguments},
     {"2 : Thread Creation Without Attributes", test_without_attributes},
     {"3 : Multiple Thread Creation", test_thread_create},
     {"4 : Thread Join with Invalid Arguments", test_invalid_join},
     {"5 : Multiple Thread Joining", test_thread_join},
+    {"5 : Thread Exit Testing", test_thread_exit},
     {"6 : Thread Kill Testing", test_thread_kill},
     {"7 : Thread Mutex Testing", test_mutex},
     {0}};
+
+// printf("2] Thread Exit Testing\n");
+// LINE;
+
+// {
+//
+// }
+// printf("2] \n");
+// {
+//     void *ret;
+//     kthread_t tid;
+
+//     kthread_create(&tid, NULL, thread2, NULL));
+//     kthread_join(tid, &ret));
+//     printf("Expected Exit Status is %d\n", 1010);
+//     printf("Actual   Exit Status is %d\n", *(int *)ret);
+//     if (*(int *)ret == 1010)
+//         PASSEDTEST
+//     else
+//         FAILEDTEST
+// }

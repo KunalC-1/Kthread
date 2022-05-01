@@ -184,7 +184,22 @@ void kthread_init()
     sigaction(SIGALRM, &sa, 0);
     begin_timer();
 }
+void kthread_exit1()
+{
+    end_timer();
 
+    kthread_list.current->status = FINISHED;
+    int block_tid = kthread_list.current->block_join_tid;
+    if (block_tid != -1)
+    {
+        // printf("block_tid %d\n", block_tid);
+        kthread_node *block_thread = search_thread(block_tid);
+        if (block_thread)
+            block_thread->status = READY;
+    }
+    begin_timer();
+    scheduler();
+}
 void wrapper()
 {
     // printf("In wrapper\n");
@@ -193,7 +208,7 @@ void wrapper()
     kthread_list.current->return_value = r;
 
     // printf("retval in wrapper:%d\n", *(int *)kthread_list.current->return_value);
-    kthread_exit();
+    kthread_exit1();
 }
 
 int kthread_create(kthread_t *thread, attr *attr, void *(*f)(void *), void *arg)
@@ -261,7 +276,7 @@ int kthread_join(kthread_t thread, void **retval)
     {
         // printf("Tried to join non-existing thread");
         begin_timer();
-        return ESRCH;
+        return EINVAL;
     }
     // kthreadlist.current will be main[function calling the kthread_join]  program's tid[i.e 0]
     join_thread->block_join_tid = kthread_list.current->tid;
@@ -306,22 +321,13 @@ int kthread_join(kthread_t thread, void **retval)
     return 0;
 }
 
-void kthread_exit()
+void kthread_exit(void *return_value)
 {
+    if (return_value == NULL)
+        return;
     // printf("in kthread exit\n");
-    end_timer();
-
-    kthread_list.current->status = FINISHED;
-    int block_tid = kthread_list.current->block_join_tid;
-    if (block_tid != -1)
-    {
-        // printf("block_tid %d\n", block_tid);
-        kthread_node *block_thread = search_thread(block_tid);
-        if (block_thread)
-            block_thread->status = READY;
-    }
-    begin_timer();
-    scheduler();
+    kthread_list.current->return_value = return_value;
+    kthread_exit1();
 }
 
 int kthread_cancel(kthread_t thread)
@@ -383,15 +389,6 @@ int kthread_kill(kthread_t thread, int sig)
 void raise_signals()
 {
     // printf("raising signals\n");
-    sigset_t all_signals;
-    sigfillset(&all_signals);
-    // not possible to block SIGKILL or SIGSTOP.Attempts to do so are silently ignored.
-    sigdelset(&all_signals, SIGALRM);
-    sigdelset(&all_signals, SIGINT);
-    sigdelset(&all_signals, SIGTERM);
-    sigdelset(&all_signals, SIGCONT);
-
-    sigprocmask(SIG_UNBLOCK, &all_signals, NULL);
     // NSIG is total number of signals defined
     for (int j = 0; j < NSIG; j++)
     {
@@ -400,7 +397,7 @@ void raise_signals()
             if (j == SIGKILL || j == SIGINT || j == SIGTERM)
             {
                 // printf("exit thread on kill\n");
-                kthread_exit();
+                kthread_exit1();
             }
             else if (j == SIGSTOP)
             {
@@ -464,6 +461,7 @@ int kthread_mutex_destroy(kthread_mutex_t *mutex)
 {
     // The pthread_mutex_destroy() function shall destroy the mutex object referenced by mutex; the mutex object becomes, in effect, uninitialized. An implementation may cause pthread_mutex_destroy() to set the object referenced by mutex to an invalid value. A destroyed mutex object can be reinitialized using pthread_mutex_init();
     mutex->lock = -1;
+    return 0;
 }
 //  If the mutex is currently locked by another thread, the call to pthread_mutex_trylock() returns an error of EBUSY.
 int kthread_mutex_trylock(kthread_mutex_t *mutex)
