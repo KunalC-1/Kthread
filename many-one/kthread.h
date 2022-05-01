@@ -26,7 +26,8 @@ enum status
     RUNNING,
     FINISHED,
     CANCELLED,
-    BLOCKED_JOIN
+    BLOCKED_JOIN,
+    STOPPED
 };
 
 typedef struct kthread_node

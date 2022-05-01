@@ -140,6 +140,8 @@ void scheduler()
         }
         if (next)
             kthread_list.current = next;
+        else
+            kthread_list.current = kthread_list.master;
         begin_timer();
         // printf("Process -> Longjump : %llu\n", kthread_list.current->tid);
         longjmp(kthread_list.current->env, 1);
@@ -238,11 +240,13 @@ void kthread_yield()
 
 int kthread_join(kthread_t thread, void **retval)
 {
-    if (kthread_list.current)
-        printf("in join %lld %lld\n", thread, kthread_list.current->tid);
-    end_timer();
 
-    if (thread == 0)
+    if (!kthread_list.current)
+        return EINVAL;
+    if (kthread_list.current)
+        // printf("in join %lld %lld\n", thread, kthread_list.current->tid);
+        end_timer();
+    if (thread == kthread_list.current->tid)
     {
         // printf("Tried to join itself");
         begin_timer();
@@ -252,12 +256,12 @@ int kthread_join(kthread_t thread, void **retval)
 
     kthread_node *join_thread = search_thread(thread);
 
-    printf("hererwsdfasdf %d\n", join_thread == NULL);
+    // printf("hererwsdfasdf %d\n", join_thread == NULL);
     if (!join_thread)
     {
         // printf("Tried to join non-existing thread");
         begin_timer();
-        return EINVAL;
+        return ESRCH;
     }
     // kthreadlist.current will be main[function calling the kthread_join]  program's tid[i.e 0]
     join_thread->block_join_tid = kthread_list.current->tid;
@@ -383,15 +387,36 @@ void raise_signals()
     sigfillset(&all_signals);
     // not possible to block SIGKILL or SIGSTOP.Attempts to do so are silently ignored.
     sigdelset(&all_signals, SIGALRM);
-    sigdelset(&all_signals, SIGKILL);
-    sigdelset(&all_signals, SIGSTOP);
+    sigdelset(&all_signals, SIGINT);
+    sigdelset(&all_signals, SIGTERM);
+    sigdelset(&all_signals, SIGCONT);
+
     sigprocmask(SIG_UNBLOCK, &all_signals, NULL);
     // NSIG is total number of signals defined
     for (int j = 0; j < NSIG; j++)
     {
         if (sigismember(&(kthread_list.current->signals), j))
         {
-            raise(j);
+            if (j == SIGKILL || j == SIGINT || j == SIGTERM)
+            {
+                // printf("exit thread on kill\n");
+                kthread_exit();
+            }
+            else if (j == SIGSTOP)
+            {
+                // printf("stopped\n");
+                kthread_list.current->status = STOPPED;
+                // so scheduler won't schedule this now
+            }
+            else if (j == SIGCONT)
+            {
+                // printf("sig cont\n");
+                kthread_list.current->status = READY;
+            }
+            else
+            {
+                raise(j);
+            }
             sigdelset(&(kthread_list.current->signals), j);
         }
     }
