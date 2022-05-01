@@ -1,6 +1,6 @@
 #include "./kthread.h"
 static kthread_t next_tid = 0;
-int count_kernel_threads = 5;
+int count_kernel_threads = 25;
 FILE *f;
 kernel_thread all_kernel_threads[MAX_KERNEL_THREAD];
 void *kernel_thread_stacks[MAX_KERNEL_THREAD];
@@ -170,14 +170,20 @@ void init_timer()
     // mask signal SIGALRM for scheduler
     sigaction(SIGALRM, &sa, 0);
 }
+// kthread_node *choose_task_from_scheduler()
+// {
+//     kthread_node *t = dequeue_ll(&ready);
+//     append_ll(&ready, t);
+//     return t;
+// }
 void kthread_init()
 {
     printf("In init\n");
     // f = fopen("log.txt", "a+");
     init_q(&ready);
-    init_q(&terminated);
+    // init_q(&terminated);
     init_lock(&readylock);
-    init_lock(&terminatedlock);
+    // init_lock(&terminatedlock);
     for (int i = 0; i < count_kernel_threads; i++)
         kernel_thread_stacks[i] = malloc(KERNEL_THREAD_STACK_SIZE);
     for (int i = 0; i < count_kernel_threads && i < MAX_KERNEL_THREAD; i++)
@@ -208,42 +214,62 @@ void wrapper(int signum)
     end_timer();
     cur->return_value = r;
     kt = search_kernel_thread(gettid());
-    acquire_lock(&terminatedlock);
-    enqueue_ll(&terminated, cur);
-    release_lock(&terminatedlock);
+    // enqueue_ll(&terminated, cur);
+    // release_lock(&terminatedlock);
+    acquire_lock(&readylock);
+    kt->current->status = FINISHED;
+    release_lock(&readylock);
     kt->current = NULL;
     printf("kernel thread in wrapper : %d , pid : %d\n", kt->k_tid, gettid());
     printf("Long Jmp kernel thread: %d , pid : %d\n", kt->k_tid, gettid());
     longjmp(kt->env, 1);
 }
-
 int thread_runner(void *args)
 {
     // fprintf(f, "Thread Runner started : %d \n", gettid());
     init_timer();
     kernel_thread *kt = NULL;
+    kthread_node *next;
     while (!start_all)
         ;
     kt = search_kernel_thread(gettid());
     while (1)
     {
-        // ready queue is not empty
-        if (!is_queue_empty(ready))
+        acquire_lock(&readylock);
+        next = ready.head;
+        while (next)
         {
-            acquire_lock(&readylock);
-            kt->current = dequeue_ll(&ready);
-            release_lock(&readylock);
-            if (kt->current)
+            if (next->status == READY)
             {
-                kt->current->k_tid = gettid();
-                if (!setjmp(kt->env))
-                {
-                    longjmp(kt->current->env, 1);
-                    // fprintf(f, "Long Jmp from thread runner to local thread: %lld , pid : %d\n", kt->current->tid, gettid());
-                }
-                printf("Returned successfully, %d\n", kt->k_tid);
+                break;
             }
+            next = next->next;
         }
+        if (next)
+        {
+            kt->current = next;
+            kt->current->status = RUNNING;
+            kt->current->k_tid = gettid();
+            if (ready.head == next)
+                ready.head = next->next;
+            if (ready.tail == next)
+                ready.tail = next->prev;
+            if (next->next != NULL)
+                next->next->prev = next->prev;
+            if (next->prev != NULL)
+                next->prev->next = next->next;
+            next->next = next->prev = NULL;
+            enqueue_ll(&ready, next);
+            if (!setjmp(kt->env))
+            {
+                release_lock(&readylock);
+                longjmp(kt->current->env, 1);
+                acquire_lock(&readylock);
+                // fprintf(f, "Long Jmp from thread runner to local thread: %lld , pid : %d\n", kt->current->tid, gettid());
+            }
+            printf("Returned successfully, %d\n", kt->k_tid);
+        }
+        release_lock(&readylock);
         if (exit_all)
         {
             break;
@@ -256,23 +282,7 @@ void scheduler()
 {
     // fprintf(f, "in hadle alarm for tid : %d\n", gettid());
     printf("in hadle alarm for tid : %d\n", gettid());
-    if (is_queue_empty(ready))
-    {
-        return;
-    }
     kernel_thread *kt = search_kernel_thread(gettid());
-    if (kt->current == NULL)
-    {
-        acquire_lock(&readylock);
-        kt->current = dequeue_ll(&ready);
-        release_lock(&readylock);
-        if (!kt->current)
-            return;
-        kt->current->k_tid = gettid();
-        // fprintf(f, "Long Jmp to local thread from timer : %lld , pid : %d, mypid : %d\n", kt->current->tid, gettid(), kt->current->k_tid);
-        printf("Long Jmp to local thread from timer : %lld , pid : %d, mypid : %d\n", kt->current->tid, gettid(), kt->current->k_tid);
-        longjmp(kt->current->env, 1);
-    }
     /* Storing the current context */
     if (setjmp(kt->current->env))
     {
@@ -282,14 +292,34 @@ void scheduler()
     {
         kt->current->k_tid = 0;
         acquire_lock(&readylock);
-        enqueue_ll(&ready, kt->current);
-        kt->current = dequeue_ll(&ready);
+        kthread_node *next = ready.head;
+        kt->current->status = READY;
+        while (next)
+        {
+            if (next->status == READY)
+            {
+                break;
+            }
+            next = next->next;
+        }
+        if (next)
+        {
+
+            kt->current = next;
+            kt->current->status = RUNNING;
+            kt->current->k_tid = gettid();
+            if (ready.head == next)
+                ready.head = next->next;
+            if (ready.tail == next)
+                ready.tail = next->prev;
+            if (next->next != NULL)
+                next->next->prev = next->prev;
+            if (next->prev != NULL)
+                next->prev->next = next->next;
+            next->next = next->prev = NULL;
+            enqueue_ll(&ready, next);
+        }
         release_lock(&readylock);
-        if (!kt->current)
-            return;
-        kt->current->k_tid = gettid();
-        // fprintf(f, "Long Jmp to local thread from timer : %lld , pid : %d, mypid : %d\n", kt->current->tid, gettid(), kt->current->k_tid);
-        printf("Long Jmp to local thread from timer : %lld , pid : %d, mypid : %d\n", kt->current->tid, gettid(), kt->current->k_tid);
         longjmp(kt->current->env, 1);
     }
 }
@@ -337,12 +367,20 @@ int kthread_join(kthread_t tid, void **retval)
 {
     printf("in join");
     kthread_node *p = NULL;
-    while (!p)
-    {
-        acquire_lock(&terminatedlock);
-        p = dequeue_by_id_ll(&terminated, tid, 0);
-        release_lock(&terminatedlock);
-    }
+    // while (!p)
+    // {
+    //     acquire_lock(&terminatedlock);
+    //     p = dequeue_by_id_ll(&terminated, tid, 0);
+    //     release_lock(&terminatedlock);
+    // }
+
+    acquire_lock(&readylock);
+    p = search_thread(&ready, tid, 0);
+    release_lock(&readylock);
+    if (!p)
+        return ESRCH;
+    while (p->status != FINISHED)
+        ;
     printf("found terminated thread with id : %lld\n", p->tid);
     // fprintf(f, "found terminated thread with id : %lld\n", p->tid);
     if (retval)
@@ -356,17 +394,18 @@ int kthread_join(kthread_t tid, void **retval)
         else
             *retval = NULL;
     }
-    acquire_lock(&readylock);
-    acquire_lock(&terminatedlock);
-    if (is_queue_empty(ready) && is_queue_empty(terminated) && !is_current_running())
-    {
-        exit_all = 1;
-        for (int i = 0; i < count_kernel_threads; i++)
-        {
-            waitpid(all_kernel_threads[i].k_tid, NULL, 0);
-        }
-    }
-    release_lock(&terminatedlock);
-    release_lock(&readylock);
+    delete_ll(&ready, p);
+    // acquire_lock(&readylock);
+    // acquire_lock(&terminatedlock);
+    // if (is_queue_empty(ready) && is_queue_empty(terminated) && !is_current_running())
+    // {
+    //     exit_all = 1;
+    //     for (int i = 0; i < count_kernel_threads; i++)
+    //     {
+    //         waitpid(all_kernel_threads[i].k_tid, NULL, 0);
+    //     }
+    // }
+    // release_lock(&terminatedlock);
+    // release_lock(&readylock);
     return 0;
 }

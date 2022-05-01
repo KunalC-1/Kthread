@@ -23,10 +23,18 @@
 #define JB_PC 7
 
 typedef unsigned long long int kthread_t;
+enum status
+{
+    READY,
+    RUNNING,
+    FINISHED,
+    STOPPED
+};
 typedef struct kthread_node
 {
     kthread_t tid;
     int k_tid;
+    enum status status;
     void *args;
     void *(*f)(void *);
     struct kthread_node *next;
