@@ -212,13 +212,11 @@ void test_mutex(void)
 }
 void test_thread_exit()
 {
-    printf("\n\t\033[1m1. Created thread uses kthread_exit \033[0m\n\n");
+    printf("\n\t\033[1m1. Created thread calls kthread_exit \033[0m\n\n");
     void *ret;
     kthread_t tid;
     kthread_create(&tid, NULL, thread6, NULL);
     kthread_join(tid, &ret);
-    printf("Expected Exit Status is %d\n", 899);
-    printf("Actual   Exit Status is %d\n", *(int *)ret);
     TEST_CHECK_(*(int *)ret == 899, "kthread exit changes return value");
 }
 TEST_LIST = {
@@ -231,24 +229,3 @@ TEST_LIST = {
     {"6 : Thread Kill Testing", test_thread_kill},
     {"7 : Thread Mutex Testing", test_mutex},
     {0}};
-
-// printf("2] Thread Exit Testing\n");
-// LINE;
-
-// {
-//
-// }
-// printf("2] \n");
-// {
-//     void *ret;
-//     kthread_t tid;
-
-//     kthread_create(&tid, NULL, thread2, NULL));
-//     kthread_join(tid, &ret));
-//     printf("Expected Exit Status is %d\n", 1010);
-//     printf("Actual   Exit Status is %d\n", *(int *)ret);
-//     if (*(int *)ret == 1010)
-//         PASSEDTEST
-//     else
-//         FAILEDTEST
-// }

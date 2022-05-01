@@ -10,11 +10,11 @@ testmany: test.o kthread.o
 test.o: 
 	$(CC) $(CFLAGS) -c testing/test.c
 
-kthread.o : many-one/kthread.c many-one/kthread.h
-	$(CC) $(CFLAGS) -c many-one/kthread.c
+kthread.o : one-one/kthread.c one-one/kthread.h
+	$(CC) $(CFLAGS) -c one-one/kthread.c
 
-spinlock.o : many-one/spinlock.c many-one/spinlock.h
-	$(CC) $(CFLAGS) -c many-one/spinlock.c
+spinlock.o : one-one/spinlock.c one-one/spinlock.h
+	$(CC) $(CFLAGS) -c one-one/spinlock.c
 
 clean:
 	rm -f *.o test

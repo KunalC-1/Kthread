@@ -83,7 +83,6 @@ void begin_timer()
     timer.it_interval.tv_sec = 0;
     timer.it_interval.tv_usec = 50000;
     setitimer(ITIMER_REAL, &timer, NULL);
-    // printf("Timer Started\n");
 }
 
 void end_timer()
@@ -93,7 +92,6 @@ void end_timer()
     timer.it_interval.tv_sec = 0;
     timer.it_interval.tv_usec = 0;
     setitimer(ITIMER_REAL, &timer, NULL);
-    // printf("Timer Stopped\n");
 }
 // These machines are equipped with a libc that includes a security feature to protect the addresses stored in jump envfers.
 // This security feature "mangles" (i.e., encrypts) a pointer before saving it in a jmp_env. Thus, we also have to mangle our new stack pointer and program counter before we can write it into a jump envfer, otherwise decryption (and subsequent uses) will fail.
@@ -113,20 +111,17 @@ static long int manglex64(long int p)
 
 void scheduler()
 {
-    // printf("In scheduler\n");
     end_timer();
     // initially master process is marked running in init, which is made to ready state here
     if (kthread_list.current->status == RUNNING)
     {
         kthread_list.current->status = READY;
-        // printf("Process -> Ready : %llu\n", kthread_list.current->tid);
     }
     // initially setjmp returns 0 and we run the else part
     if (setjmp(kthread_list.current->env))
     {
         kthread_list.current->status = RUNNING;
         raise_signals();
-        // printf("Process -> Running : %llu\n", kthread_list.current->tid);
         return;
     }
     else
@@ -143,7 +138,6 @@ void scheduler()
         else
             kthread_list.current = kthread_list.master;
         begin_timer();
-        // printf("Process -> Longjump : %llu\n", kthread_list.current->tid);
         longjmp(kthread_list.current->env, 1);
     }
 }
@@ -163,7 +157,6 @@ void delete_all_threads()
 
 void kthread_init()
 {
-    // printf("In init\n");
     kthread_list.head = kthread_list.tail = NULL;
     // kthread_list.current = (kthread_node *)malloc(sizeof(kthread_node));
 
@@ -192,7 +185,6 @@ void kthread_exit1()
     int block_tid = kthread_list.current->block_join_tid;
     if (block_tid != -1)
     {
-        // printf("block_tid %d\n", block_tid);
         kthread_node *block_thread = search_thread(block_tid);
         if (block_thread)
             block_thread->status = READY;
@@ -202,18 +194,15 @@ void kthread_exit1()
 }
 void wrapper()
 {
-    // printf("In wrapper\n");
     begin_timer();
     void *r = kthread_list.current->f(kthread_list.current->args);
     kthread_list.current->return_value = r;
 
-    // printf("retval in wrapper:%d\n", *(int *)kthread_list.current->return_value);
     kthread_exit1();
 }
 
 int kthread_create(kthread_t *thread, attr *attr, void *(*f)(void *), void *arg)
 {
-    // printf("in create\n");
     if (!thread || !f)
         return EINVAL;
     end_timer();
@@ -259,11 +248,9 @@ int kthread_join(kthread_t thread, void **retval)
     if (!kthread_list.current)
         return EINVAL;
     if (kthread_list.current)
-        // printf("in join %lld %lld\n", thread, kthread_list.current->tid);
         end_timer();
     if (thread == kthread_list.current->tid)
     {
-        // printf("Tried to join itself");
         begin_timer();
         // waiting on itself is not a successful operation
         return EINVAL;
@@ -271,10 +258,8 @@ int kthread_join(kthread_t thread, void **retval)
 
     kthread_node *join_thread = search_thread(thread);
 
-    // printf("hererwsdfasdf %d\n", join_thread == NULL);
     if (!join_thread)
     {
-        // printf("Tried to join non-existing thread");
         begin_timer();
         return EINVAL;
     }
@@ -284,14 +269,12 @@ int kthread_join(kthread_t thread, void **retval)
     if (join_thread->status == FINISHED)
     {
         // the thread is no longer active, so simply return
-        // printf("in join,status=FINISHED for tid: %lld\n", join_thread->tid);
         begin_timer();
         if (retval)
         {
             if (join_thread->return_value)
             {
                 *retval = join_thread->return_value;
-                // printf("retval in join:%d\n", *(int *)retval);
             }
             else
                 *retval = NULL;
@@ -303,7 +286,6 @@ int kthread_join(kthread_t thread, void **retval)
     {
         // changing status of main thread as blocked, waiting for the child thread to complete
         kthread_list.current->status = BLOCKED_JOIN;
-        // printf("in join,status=BLOCKED_JOIN for tid: %lld\n", join_thread->tid);
         // pause so that scheduling can be done
         scheduler();
     }
@@ -312,7 +294,6 @@ int kthread_join(kthread_t thread, void **retval)
         if (join_thread->return_value)
         {
             *retval = join_thread->return_value;
-            // printf("retval in join:%d\n", *(int *)retval);
         }
         else
             *retval = NULL;
@@ -325,7 +306,6 @@ void kthread_exit(void *return_value)
 {
     if (return_value == NULL)
         return;
-    // printf("in kthread exit\n");
     kthread_list.current->return_value = return_value;
     kthread_exit1();
 }
@@ -361,7 +341,6 @@ int kthread_cancel(kthread_t thread)
 int kthread_kill(kthread_t thread, int sig)
 {
     end_timer();
-    // printf("in kill\n");
     if (sig < 0 || sig > 64)
     {
         begin_timer();
@@ -377,18 +356,15 @@ int kthread_kill(kthread_t thread, int sig)
     kthread_node *thread_to_signal = search_thread(thread);
     if (!thread_to_signal)
     {
-        // printf("thread not found\n");
         begin_timer();
         return ESRCH;
     }
     sigaddset(&thread_to_signal->signals, sig);
-    // printf("added signal %d\n", sig);
     begin_timer();
     return 0;
 }
 void raise_signals()
 {
-    // printf("raising signals\n");
     // NSIG is total number of signals defined
     for (int j = 0; j < NSIG; j++)
     {
@@ -396,18 +372,15 @@ void raise_signals()
         {
             if (j == SIGKILL || j == SIGINT || j == SIGTERM)
             {
-                // printf("exit thread on kill\n");
                 kthread_exit1();
             }
             else if (j == SIGSTOP)
             {
-                // printf("stopped\n");
                 kthread_list.current->status = STOPPED;
                 // so scheduler won't schedule this now
             }
             else if (j == SIGCONT)
             {
-                // printf("sig cont\n");
                 kthread_list.current->status = READY;
             }
             else
