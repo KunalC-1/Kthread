@@ -1,5 +1,6 @@
 #include "acutest.h"
 #include "../one-one/kthread.h"
+int counting;
 void *thread1()
 {
     int x = 0;
@@ -27,6 +28,26 @@ void *thread3(void *arg)
         *x += i;
     }
     return x;
+}
+void *thread4()
+{
+    int *i = (int *)malloc(sizeof(int));
+    *i = 0;
+    while (counting)
+    {
+        i++;
+    };
+    return i;
+}
+void *thread5()
+{
+    while (1)
+        ;
+    return NULL;
+}
+void sigusr1_handler()
+{
+    counting = 0;
 }
 
 void test_invalid_arguments()
@@ -56,14 +77,13 @@ void test_thread_create()
 }
 void test_invalid_join()
 {
-    kthread_t tid = rand();
+    kthread_t tid = 8000;
     int *r;
-    TEST_CHECK_(kthread_join(0, NULL) == -1, "Join with null arguments");
-    TEST_CHECK_(kthread_join(tid, NULL) == -1, "Join with invalid thread Id : %lld", tid);
-    TEST_CHECK_(kthread_join(0, (void **)&r) == -1, "Join with invalid args");
+    TEST_CHECK_(kthread_join(0, NULL) == EINVAL, "Join with null arguments");
+    TEST_CHECK_(kthread_join(-1, NULL) == ESRCH, "Join with invalid thread Id : %lld", tid);
     kthread_create(&tid, NULL, thread1, NULL);
     kthread_join(tid, NULL);
-    TEST_CHECK_(kthread_join(tid, (void **)&r) == -1, "Join already joined thread");
+    TEST_CHECK_(kthread_join(tid, (void **)&r) == EINVAL, "Join already joined thread");
 }
 void test_thread_join()
 {
@@ -102,11 +122,46 @@ void test_thread_join()
         free(ret[i]);
     }
 }
+void test_thread_kill()
+{
+    void *ret;
+    printf("\n\t\033[1m1. Send invalid signal to thread\033[0m\n\n");
+    kthread_t tid;
+    struct sigaction action;
+    action.sa_handler = sigusr1_handler;
+    sigaction(SIGUSR1, &action, NULL);
+    // global variable
+    counting = 1;
+    kthread_create(&tid, NULL, thread4, NULL);
+    TEST_CHECK_(kthread_kill(tid, -1) == EINVAL, "Thread kill with invalid argument");
+    counting = 0;
+    kthread_join(tid, NULL);
 
+    printf("\n\t\033[1m2. Send signal to a thread, check user signal handler\033[0m\n\n");
+    counting = 1;
+    kthread_create(&tid, NULL, thread4, NULL);
+    kthread_kill(tid, SIGUSR1);
+    TEST_CHECK_(kthread_join(tid, &ret) == 0, "User Signal handler, signal handled");
+
+    printf("\n\t\033[1m3. Checking signal handling for SIGTSTP SIGCONT SIGTERM SIGKILL\033[0m\n\n");
+    kthread_create(&tid, NULL, thread5, NULL);
+    printf("Sending SIGTSTP signal\n");
+    TEST_CHECK_(kthread_kill(tid, SIGSTOP) == 0, "SIGSTOP handled");
+    printf("Sending SIGCONT signal\n");
+    TEST_CHECK_(kthread_kill(tid, SIGCONT) == 0, "SIGCONT handled");
+    printf("Sending SIGTERM signal\n");
+    TEST_CHECK_(kthread_kill(tid, SIGTERM) == 0, "SIGTERM handled");
+    kthread_join(tid, NULL);
+    kthread_create(&tid, NULL, thread5, NULL);
+    printf("Sending SIGKILL signal\n");
+    TEST_CHECK_(kthread_kill(tid, SIGKILL) == 0, "SIGKILL handled");
+    kthread_join(tid, NULL);
+}
 TEST_LIST = {
     {"1 : Thread Creation with Invalid Arguments", test_invalid_arguments},
     {"2 : Thread Creation Without Attributes", test_without_attributes},
     {"3 : Multiple Thread Creation", test_thread_create},
     {"4 : Thread Join with Invalid Arguments", test_invalid_join},
     {"5 : Multiple Thread Joining", test_thread_join},
+    {"5 : Thread Kill Testing", test_thread_kill},
     {0}};
