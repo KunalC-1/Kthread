@@ -42,6 +42,7 @@ typedef struct kthread_node
     jmp_buf env;
     void *return_value;
     unsigned long *stack_top;
+    sigset_t signals;
     int stack_size;
 } kthread_node;
 
@@ -52,7 +53,7 @@ typedef struct kernel_thread
     // which thread is running on kernel thread
     kthread_node *current;
 } kernel_thread;
-typedef struct kthread_list
+struct kthread_list
 {
     kthread_node *head;
     kthread_node *tail;
@@ -61,12 +62,12 @@ typedef struct attr
 {
     int novalue;
 } attr;
-void init_q(kthread_list *list);
-void enqueue_ll(kthread_list *list, kthread_node *k);
-void delete_ll(kthread_list *list, kthread_node *del);
-kthread_node *dequeue_by_id_ll(kthread_list *list, kthread_t id, int ispid);
-kthread_node *dequeue_ll(kthread_list *list);
-kthread_node *search_thread(kthread_list *list, kthread_t id, int ispid);
+void init_q();
+void enqueue_ll(kthread_node *k);
+void delete_ll(kthread_node *del);
+kthread_node *dequeue_by_id_ll(kthread_t id, int ispid);
+kthread_node *dequeue_ll();
+kthread_node *search_thread(kthread_t id, int ispid);
 kernel_thread *search_kernel_thread(int k_tid);
 void begin_timer();
 void end_timer();
@@ -77,6 +78,7 @@ int thread_runner(void *args);
 void scheduler();
 int kthread_create(kthread_t *thread, attr *attr, void *(*f)(void *), void *arg);
 int kthread_join(kthread_t thread, void **retval);
-void kthread_exit();
+void kthread_exit(void *return_value);
+void raise_signals(kthread_node *t);
 
 #endif
