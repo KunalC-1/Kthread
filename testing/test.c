@@ -1,5 +1,5 @@
 #include "acutest.h"
-#include "../one-one/kthread.h"
+#include "../many-one/kthread.h"
 int counting;
 void *thread1()
 {
@@ -77,10 +77,10 @@ void test_thread_create()
 }
 void test_invalid_join()
 {
-    kthread_t tid = 8000;
+    kthread_t tid = -1;
     int *r;
     TEST_CHECK_(kthread_join(0, NULL) == EINVAL, "Join with null arguments");
-    TEST_CHECK_(kthread_join(-1, NULL) == ESRCH, "Join with invalid thread Id : %lld", tid);
+    TEST_CHECK_(kthread_join(tid, NULL) == EINVAL, "Join with invalid thread Id : %lld", tid);
     kthread_create(&tid, NULL, thread1, NULL);
     kthread_join(tid, NULL);
     TEST_CHECK_(kthread_join(tid, (void **)&r) == EINVAL, "Join already joined thread");
@@ -148,7 +148,8 @@ void test_thread_kill()
     printf("Sending SIGTSTP signal\n");
     TEST_CHECK_(kthread_kill(tid, SIGSTOP) == 0, "SIGSTOP handled");
     printf("Sending SIGCONT signal\n");
-    TEST_CHECK_(kthread_kill(tid, SIGCONT) == 0, "SIGCONT handled");
+    int m = kthread_kill(tid, SIGCONT);
+    TEST_CHECK_(m == 0, "SIGCONT handled : %d", m);
     printf("Sending SIGTERM signal\n");
     TEST_CHECK_(kthread_kill(tid, SIGTERM) == 0, "SIGTERM handled");
     kthread_join(tid, NULL);
@@ -157,11 +158,59 @@ void test_thread_kill()
     TEST_CHECK_(kthread_kill(tid, SIGKILL) == 0, "SIGKILL handled");
     kthread_join(tid, NULL);
 }
+kthread_mutex_t slp_lock;
+int c1, c2, c, run = 1;
+
+void *f(void *lock)
+{
+    while (run)
+    {
+        c1++;
+        kthread_mutex_lock((kthread_mutex_t *)lock);
+        c++;
+        kthread_mutex_unlock((kthread_mutex_t *)lock);
+    }
+    return NULL;
+}
+void *g(void *lock)
+{
+    while (run)
+    {
+        c2++;
+        kthread_mutex_lock((kthread_mutex_t *)lock);
+        c++;
+        kthread_mutex_unlock((kthread_mutex_t *)lock);
+    }
+    return NULL;
+}
+
+void test_mutex(void)
+{
+    c1 = 0;
+    c2 = 0;
+    run = 1;
+    c = 0;
+    printf("Starting test with Mutex\n");
+    kthread_mutex_init(&slp_lock, NULL);
+    kthread_t t1, t2;
+    kthread_create(&t1, NULL, f, (void *)&slp_lock);
+    kthread_create(&t2, NULL, g, (void *)&slp_lock);
+    // sleep didn't work so this approach
+    while (c < 50)
+        ;
+    run = 0;
+    kthread_join(t1, NULL);
+    kthread_join(t2, NULL);
+    printf("\nValues after test are (c1 + c2)=%d c=%d\n", c1 + c2, c);
+    TEST_CHECK_(c1 + c2 - c == 0, "Test Passed");
+}
+
 TEST_LIST = {
     {"1 : Thread Creation with Invalid Arguments", test_invalid_arguments},
     {"2 : Thread Creation Without Attributes", test_without_attributes},
     {"3 : Multiple Thread Creation", test_thread_create},
     {"4 : Thread Join with Invalid Arguments", test_invalid_join},
     {"5 : Multiple Thread Joining", test_thread_join},
-    {"5 : Thread Kill Testing", test_thread_kill},
+    {"6 : Thread Kill Testing", test_thread_kill},
+    {"7 : Thread Mutex Testing", test_mutex},
     {0}};
