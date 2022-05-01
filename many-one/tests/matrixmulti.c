@@ -4,13 +4,14 @@
 #include <unistd.h>
 #include <time.h>
 
-#define MAT_SIZE 10
-#define MAX_THREADS 100
+#define MAT_SIZE 20
+#define MAX_THREADS 226
 
 int i, j, k;
 int matrix1[MAT_SIZE][MAT_SIZE];
 int matrix2[MAT_SIZE][MAT_SIZE];
 int result[MAT_SIZE][MAT_SIZE];
+int ans[MAT_SIZE][MAT_SIZE];
 
 typedef struct parameters
 {
@@ -22,20 +23,19 @@ void *mult(void *arg)
 
     args *p = arg;
 
-    // Calculating Each Element in Result Matrix Using Passed Arguments
     for (int a = 0; a < j; a++)
     {
         result[p->x][p->y] += matrix1[p->x][a] * matrix2[a][p->y];
     }
     sleep(3);
 
-    // End Of Thread
-    kthread_exit(0);
     return NULL;
 }
 
 int main()
 {
+    printf("\n\t\033[1mMatrix Multiplication Test\033[0m\n\n");
+
     for (int x = 0; x < 10; x++)
     {
         for (int y = 0; y < 10; y++)
@@ -45,12 +45,9 @@ int main()
             result[x][y] = 0;
         }
     }
-    printf(" --- Defining Matrix 1 ---\n\n");
-    printf("Enter number of rows for matrix 1: ");
-    scanf("%d", &i);
-    printf("Enter number of columns for matrix 1: ");
-    scanf("%d", &j);
-    printf("\n --- Initializing Matrix 1 ---\n\n");
+    i = 10;
+    j = 10;
+    k = 10;
     int i1 = 0, i2 = 0;
     for (int x = 0; x < i; x++)
     {
@@ -60,14 +57,6 @@ int main()
         }
     }
 
-    printf("\n --- Defining Matrix 2 ---\n\n");
-
-    // Getting Column Number For Matrix2
-    printf("Number of rows for matrix 2 : %d\n", j);
-    printf("Enter number of columns for matrix 2: ");
-    scanf("%d", &k);
-
-    printf("\n --- Initializing Matrix 2 ---\n\n");
     for (int x = 0; x < j; x++)
     {
         for (int y = 0; y < k; y++)
@@ -75,41 +64,12 @@ int main()
             matrix2[x][y] = i2++;
         }
     }
-
-    // Printing Matrices - - - - - - - - - - - - - - - - - - - - - - - - - - -//
-
-    printf("\n --- Matrix 1 ---\n\n");
-    for (int x = 0; x < i; x++)
-    {
-        for (int y = 0; y < j; y++)
-        {
-            printf("%5d", matrix1[x][y]);
-        }
-        printf("\n\n");
-    }
-
-    printf(" --- Matrix 2 ---\n\n");
-    for (int x = 0; x < j; x++)
-    {
-        for (int y = 0; y < k; y++)
-        {
-            printf("%5d", matrix2[x][y]);
-        }
-        printf("\n\n");
-    }
-
-    // Multiply Matrices Using Threads - - - - - - - - - - - - - - - - - - - -//
-
-    // Defining Threads
     kthread_t thread[MAX_THREADS];
 
-    // Counter For Thread Index
-    int thread_number = 0;
+    int kthread_number = 0;
 
-    // Defining p For Passing Parameters To Function As Struct
     args p[i * k];
 
-    // Start Timer
     time_t start = time(NULL);
 
     for (int x = 0; x < i; x++)
@@ -117,15 +77,12 @@ int main()
         for (int y = 0; y < k; y++)
         {
 
-            // Initializing Parameters For Passing To Function
-            p[thread_number].x = x;
-            p[thread_number].y = y;
+            p[kthread_number].x = x;
+            p[kthread_number].y = y;
 
-            // Status For Checking Errors
             int status;
 
-            // Create Specific Thread For Each Element In Result Matrix
-            status = kthread_create(&thread[thread_number], NULL, mult, (void *)&p[thread_number]);
+            status = kthread_create(&thread[kthread_number], NULL, mult, (void *)&p[kthread_number]);
 
             if (status)
             {
@@ -133,36 +90,45 @@ int main()
                 exit(0);
             }
 
-            thread_number++;
+            kthread_number++;
         }
     }
-
-    // Wait For All Threads Done - - - - - - - - - - - - - - - - - - - - - - //
 
     for (int z = 0; z < (i * k); z++)
         kthread_join(thread[z], NULL);
 
-    // Print Multiplied Matrix (Result) - - - - - - - - - - - - - - - - - - -//
-
-    printf(" --- Multiplied Matrix ---\n\n");
     for (int x = 0; x < i; x++)
     {
-        for (int y = 0; y < k; y++)
+        for (int z = 0; z < k; z++)
         {
-            printf("%5d", result[x][y]);
-        }
-        printf("\n\n");
-    }
 
-    // Calculate Total Time Including 3 Soconds Sleep In Each Thread - - - -//
+            for (int y = 0; y < j; y++)
+            {
+
+                {
+                    ans[x][z] += matrix1[x][y] * matrix2[y][z];
+                }
+            }
+        }
+    }
 
     printf(" ---> Time Elapsed : %.2f Sec\n\n", (double)(time(NULL) - start));
 
-    // Total Threads Used In Process - - - - - - - - - - - - - - - - - - - -//
+    printf(" ---> Used Threads : %d \n\n", kthread_number);
+    for (int z = 0; z < kthread_number; z++)
 
-    printf(" ---> Used Threads : %d \n\n", thread_number);
-    for (int z = 0; z < thread_number; z++)
-        printf(" - Thread %d ID : %d\n", z + 1, (int)thread[z]);
+        for (int x = 0; x < i; x++)
+        {
+            for (int y = 0; y < k; y++)
+            {
+                if (result[x][y] != ans[x][y])
+                {
 
+                    printf("Matrix Multiplication Wrong \n");
+                    exit(0);
+                }
+            }
+        }
+    printf("Matrix Multiplication Matched\n\n");
     return 0;
 }

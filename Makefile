@@ -70,12 +70,18 @@ tests: one-one/*.c many-one/*.c many-one/*.c one-one/tests/*.c many-one/tests/*.
 	$(CC) $(CFLAGS) bin/one-one/test.o bin/one-one/kthread.o bin/one-one/spinlock.o -o tests
 	@mv tests matrixmulti mergeSort test/one-one
 	
-	$(CC) $(CFLAGS) bin/one-one/matrixmulti.o bin/one-one/kthread.o bin/one-one/spinlock.o -o matrixmulti
-	$(CC) $(CFLAGS) bin/one-one/mergeSort.o bin/one-one/kthread.o bin/one-one/spinlock.o -o mergeSort
-	$(CC) $(CFLAGS) bin/one-one/test.o bin/one-one/kthread.o bin/one-one/spinlock.o -o tests
-	@mv tests matrixmulti mergeSort test/one-one
+	$(CC) $(CFLAGS) bin/many-one/matrixmulti.o bin/many-one/kthread.o -o matrixmulti
+	$(CC) $(CFLAGS) bin/many-one/mergeSort.o bin/many-one/kthread.o -o mergeSort
+	$(CC) $(CFLAGS) bin/many-one/test.o bin/many-one/kthread.o -o tests
+	@mv tests matrixmulti mergeSort test/many-one
+
+	$(CC) $(CFLAGS) bin/many-many/matrixmulti.o bin/many-many/kthread.o bin/many-many/spinlock.o -o matrixmulti
+	$(CC) $(CFLAGS) bin/many-many/mergeSort.o bin/many-many/kthread.o bin/many-many/spinlock.o -o mergeSort
+	$(CC) $(CFLAGS) bin/many-many/test.o bin/many-many/kthread.o bin/many-many/spinlock.o -o tests
+	@mv tests matrixmulti mergeSort test/many-many
 
 runtest:
+	chmod +x testrun.sh
 	@make init
 	./testrun.sh
 

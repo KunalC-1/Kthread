@@ -3,7 +3,6 @@
 #include <string.h>
 #include <time.h>
 #include <sys/time.h>
-// #include <pthread.h>
 #include "../kthread.h"
 struct Params
 {
@@ -21,9 +20,7 @@ void merge(int *start, int *mid, int *end)
     while (lhs != mid)
         *dst++ = *lhs++;
     memcpy(start, res, (rhs - start) * sizeof *res);
-    // free(res);
 }
-// punctul de intrare
 void merge_sort_mt(int *start, size_t len, int depth)
 {
     if (len < 2)
@@ -37,11 +34,6 @@ void merge_sort_mt(int *start, size_t len, int depth)
     else
     {
         struct Params params = {start, len / 2, depth / 2};
-        // pthread_t thrd;
-        // pthread_create(&thrd, NULL, merge_sort_thread, &params);
-        // merge_sort_mt(start + len / 2, len - len / 2, depth / 2);
-        // pthread_join(thrd, NULL);
-
         kthread_t thrd;
         kthread_create(&thrd, NULL, merge_sort_thread, &params);
         merge_sort_mt(start + len / 2, len - len / 2, depth / 2);
@@ -63,29 +55,26 @@ void merge_sort(int *start, size_t len)
 
 int main()
 {
+    printf("\n\t\033[1mMerge Sort Test\033[0m\n\n");
     clock_t start, stop;
-    static const unsigned int N = 10000;
+    static const unsigned int N = 1000;
     int *data = malloc(N * sizeof(*data));
     unsigned int i;
     srand((unsigned)time(0));
-    for (i = 0; i < N; ++i)
-    {
-        data[i] = rand() % 500;
-        printf("%4d ", data[i]);
-        if ((i + 1) % 8 == 0)
-            printf("\n");
-    }
-    printf("\n");
+
     start = clock();
     merge_sort(data, N);
-    for (i = 0; i < N; ++i)
+    for (i = 1; i < N; ++i)
     {
-        printf("%4d ", data[i]);
-        if ((i + 1) % 8 == 0)
-            printf("\n");
+        if (data[i] < data[i - 1])
+        {
+            printf("\nArray Not Sorted ...\n");
+            exit(0);
+        }
     }
+    printf("\nArray Sorted ...\n");
+
     stop = clock();
     printf("Elapsed: %f seconds\n", (double)(stop - start) / CLOCKS_PER_SEC);
-    getchar();
     return 0;
 }

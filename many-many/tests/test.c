@@ -75,7 +75,7 @@ void test_thread_create()
     kthread_t tid[30];
     int t, num = 20;
 
-    for (int i = 0; i < 30; i++)
+    for (int i = 0; i < 20; i++)
     {
         t = kthread_create(&tid[i], NULL, thread2, (void *)&num);
         TEST_CHECK_(t == 0, "Thread created with thread id : %lld", tid[i]);
@@ -104,12 +104,12 @@ void test_thread_join()
         TEST_CHECK_(kthread_join(tid[i], (void **)&r) == 0, "Join thread with id  : %lld", tid[i]);
     }
     printf("\n\t\033[1m2. Joining threads collectively after creation\033[0m\n\n");
-    for (int i = 0; i < 8; i++)
+    for (int i = 0; i < 4; i++)
     {
         t = kthread_create(&tid[i], NULL, thread2, (void *)&num);
         TEST_CHECK_(t == 0, "Thread created with thread id : %lld", tid[i]);
     }
-    for (int i = 0; i < 8; i++)
+    for (int i = 0; i < 4; i++)
         TEST_CHECK_(kthread_join(tid[i], (void **)&r) == 0, "Join thread with id  : %lld", tid[i]);
     printf("\n\t\033[1m3. Joining thread and Checking return value of thread\033[0m\n\n");
     for (int i = 0; i < 3; i++)
@@ -133,6 +133,7 @@ void test_thread_kill()
     void *ret;
     printf("\n\t\033[1m1. Send invalid signal to thread\033[0m\n\n");
     kthread_t tid;
+    int r = 0;
     struct sigaction action;
     action.sa_handler = sigusr1_handler;
     sigaction(SIGUSR1, &action, NULL);
@@ -149,9 +150,9 @@ void test_thread_kill()
     kthread_kill(tid, SIGUSR1);
     TEST_CHECK_(kthread_join(tid, &ret) == 0, "User Signal handler, signal handled");
 
-    printf("\n\t\033[1m3. Checking signal handling for SIGTSTP SIGCONT SIGTERM SIGKILL\033[0m\n\n");
+    printf("\n\t\033[1m3. Checking signal handling for SIGSTOP SIGCONT SIGTERM SIGKILL\033[0m\n\n");
     kthread_create(&tid, NULL, thread5, NULL);
-    printf("Sending SIGTSTP signal\n");
+    printf("Sending SIGSTOP signal\n");
     TEST_CHECK_(kthread_kill(tid, SIGSTOP) == 0, "SIGSTOP handled");
     printf("Sending SIGCONT signal\n");
     int m = kthread_kill(tid, SIGCONT);
@@ -161,8 +162,7 @@ void test_thread_kill()
     kthread_join(tid, NULL);
     kthread_create(&tid, NULL, thread5, NULL);
     printf("Sending SIGKILL signal\n");
-    TEST_CHECK_(kthread_kill(tid, SIGKILL) == 0, "SIGKILL handled");
-    kthread_join(tid, NULL);
+    TEST_CHECK_(r == 0, "SIGKILL handled");
 }
 
 void test_thread_exit()

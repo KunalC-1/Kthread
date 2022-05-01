@@ -149,9 +149,9 @@ void test_thread_kill()
     kthread_kill(tid, SIGUSR1);
     TEST_CHECK_(kthread_join(tid, &ret) == 0, "User Signal handler, signal handled");
 
-    printf("\n\t\033[1m3. Checking signal handling for SIGTSTP SIGCONT SIGTERM SIGKILL\033[0m\n\n");
+    printf("\n\t\033[1m3. Checking signal handling for SIGSTOP SIGCONT SIGTERM SIGKILL\033[0m\n\n");
     kthread_create(&tid, NULL, thread5, NULL);
-    printf("Sending SIGTSTP signal\n");
+    printf("Sending SIGSTOP signal\n");
     TEST_CHECK_(kthread_kill(tid, SIGSTOP) == 0, "SIGSTOP handled");
     printf("Sending SIGCONT signal\n");
     int m = kthread_kill(tid, SIGCONT);
