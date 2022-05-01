@@ -57,7 +57,7 @@ int main()
 {
     printf("\n\t\033[1mMerge Sort Test\033[0m\n\n");
     clock_t start, stop;
-    static const unsigned int N = 1000;
+    static const unsigned int N = 10;
     int *data = malloc(N * sizeof(*data));
     unsigned int i;
     srand((unsigned)time(0));
