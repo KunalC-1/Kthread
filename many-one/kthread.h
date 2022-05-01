@@ -27,7 +27,8 @@ enum status
     FINISHED,
     CANCELLED,
     BLOCKED_JOIN,
-    STOPPED
+    STOPPED,
+    BLOCKED_MUTEX
 };
 
 typedef struct kthread_node
@@ -67,4 +68,18 @@ int kthread_create(kthread_t *k, attr *attr, void *(*f)(void *), void *args);
 int kthread_join(kthread_t thread, void **retval);
 int kthread_kill(kthread_t thread, int sig);
 void kthread_exit();
+typedef struct
+{
+    int lock; /*stores 1 if locked else 0*/
+} kthread_mutex_t;
+typedef struct kthread_mutexattr_t
+{
+    int novalue;
+} kthread_mutexattr_t;
+
+int kthread_mutex_init(kthread_mutex_t *mutex, const kthread_mutexattr_t *attr);
+int kthread_mutex_destroy(kthread_mutex_t *mutex);
+int kthread_mutex_lock(kthread_mutex_t *mutex);
+int kthread_mutex_unlock(kthread_mutex_t *mutex);
+int kthread_mutex_trylock(kthread_mutex_t *mutex);
 #endif

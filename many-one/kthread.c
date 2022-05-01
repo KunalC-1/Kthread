@@ -422,3 +422,57 @@ void raise_signals()
     }
     return;
 }
+
+int kthread_mutex_init(kthread_mutex_t *mutex, const kthread_mutexattr_t *attr)
+{
+    mutex->lock = 0; /*Initially it is unlocked*/
+    return 0;
+}
+
+int kthread_mutex_lock(kthread_mutex_t *mutex)
+{
+    end_timer();
+    while (__sync_lock_test_and_set(&mutex->lock, 1))
+    {
+        kthread_list.current->status = BLOCKED_MUTEX;
+        begin_timer();
+        scheduler();
+    }
+    __sync_synchronize();
+    begin_timer();
+    return 0;
+}
+
+int kthread_mutex_unlock(kthread_mutex_t *mutex)
+{
+    end_timer();
+    __sync_synchronize();
+    __sync_lock_release(&mutex->lock);
+    for (int i = 1; i <= next_tid; i++)
+    {
+        kthread_node *th = search_thread(i);
+        if (th->status == BLOCKED_MUTEX)
+        {
+            th->status = READY;
+        }
+    }
+    begin_timer();
+    scheduler();
+    return 0;
+}
+int kthread_mutex_destroy(kthread_mutex_t *mutex)
+{
+    // The pthread_mutex_destroy() function shall destroy the mutex object referenced by mutex; the mutex object becomes, in effect, uninitialized. An implementation may cause pthread_mutex_destroy() to set the object referenced by mutex to an invalid value. A destroyed mutex object can be reinitialized using pthread_mutex_init();
+    mutex->lock = -1;
+}
+//  If the mutex is currently locked by another thread, the call to pthread_mutex_trylock() returns an error of EBUSY.
+int kthread_mutex_trylock(kthread_mutex_t *mutex)
+{
+    end_timer();
+    if (__sync_lock_test_and_set(&mutex->lock, 1))
+    {
+        return EBUSY;
+    }
+    begin_timer();
+    return 0;
+}
