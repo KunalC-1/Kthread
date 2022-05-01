@@ -36,6 +36,7 @@ typedef struct kthread_node
     void *(*f)(void *);
     struct kthread_node *next;
     struct kthread_node *prev;
+    sigset_t signals;
     int status;
     jmp_buf env;
     void *return_value;
